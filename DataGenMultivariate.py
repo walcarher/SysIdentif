@@ -20,7 +20,7 @@ else :
 
 # Size of input tensor
 #WH_in_list = [224, 32]
-WH_in_list = np.linspace(7, 224, 10, dtype = int ).tolist()
+WH_in_list = np.linspace(11, 224, 10, dtype = int ).tolist()
 #C_in_list = [3, 512]
 C_in_list = np.linspace(3, 1024, 10, dtype = int ).tolist()
 # Vector list of multiple output tensor channels (number of filters)
