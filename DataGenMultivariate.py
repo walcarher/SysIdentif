@@ -27,7 +27,7 @@ C_in_list = np.linspace(3, 1024, 10, dtype = int ).tolist()
 #C_out_list = [32, 1024]
 C_out_list = np.linspace(1, 1024, 10, dtype = int ).tolist()
 # Number of iterations to be averaged
-n_iter = 100
+n_iter = 10
 # Delay between tests for memory synchronization
 time_delay = 0.00
 # Latency, power, energy and throughput vectors to store results
