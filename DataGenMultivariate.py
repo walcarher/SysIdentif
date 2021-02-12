@@ -148,8 +148,8 @@ for WH_in in WH_in_list:
                 LAT = 1000*av_elapsed_time # in miliSeconds
                 av_power = power/n_iter
                 POW = av_power/1000 # in Watts
-                E = (av_power/1000) * av_elapsed_time / 1000000 # in microJoules
-                T = out.size(1) * out.size(2) * out.size(3) * 4 / (av_elapsed_time * 1024) # in KBytes/seconds
+                E = (av_power/1000) * av_elapsed_time # in Joules
+                T = WH_in * WH_in * C_in * 4 / (av_elapsed_time * 1024 * 1024 * 1024) # in GBytes/seconds
                 torch.cuda.empty_cache()
                 
                 dataset.append([WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out, LAT, POW, E, T])

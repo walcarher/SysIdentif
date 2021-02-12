@@ -21,10 +21,10 @@ else :
 # Size of input tensor
 WH_in_list = [224, 32]
 #WH_in_list = np.linspace(7, 224, 20, dtype = int ).tolist()
-C_in_list = [3, 128]
+C_in_list = [3, 512]
 #C_in_list = np.linspace(3, 1024, 20, dtype = int ).tolist()
 # Vector list of multiple output tensor channels (number of filters)
-C_out_list = [32, 128]
+C_out_list = [32, 1024]
 #C_out_list = np.linspace(1, 1024, 20, dtype = int ).tolist()
 # Number of samples 
 n_samples = 250
@@ -90,8 +90,8 @@ while n < n_samples:
         conv1x1_s1_net.conv1.bias.data.random_().cuda()
         start = time.time()
         out = conv1x1_s1_net(input).cuda()
-        with open(gpuLoadFile, 'r') as gpuFile:
-            power += float(gpuFile.read())
+        #with open(gpuLoadFile, 'r') as gpuFile:
+            #power += float(gpuFile.read())
         torch.cuda.synchronize()
         end = time.time()
         elapsed_time += end - start
@@ -108,9 +108,9 @@ while n < n_samples:
                 conv1x1_s1_net.conv1.kernel_size[1] * \
                 C_in * out.size(1) * out.size(2) * out.size(3)
                 
-    print("Number of MegaMACs on Conv1x1 with stride of 1: %.2f" %(MACs/1000000))
+    print("Number of MegaMACs on Conv1x1 with stride of 1: %.2f" %(float(MACs)/1000000))
     
-    MMACs_list.append(MACs/1000000)
+    MMACs_list.append(float(MACs)/1000000)
     
     n += 1 
 
@@ -139,6 +139,13 @@ plt.ylabel('Latency (ms)', fontsize = 18)
 plt.grid()
 
 plt.figure()
+plt.scatter(MMACs_list, LAT_list)
+plt.title('MACs vs Latency', fontsize = 20)
+plt.xlabel('#MACs (Million)', fontsize = 18)
+plt.ylabel('Latency (ms)', fontsize = 18)
+plt.grid()
+
+plt.figure()
 plt.plot(t, POW_list)
 plt.title('Power vs iteration', fontsize = 20)
 plt.xlabel('Iteration', fontsize = 18)
@@ -146,10 +153,17 @@ plt.ylabel('Power (W)', fontsize = 18)
 plt.grid()
 
 plt.figure()
-plt.scatter(MMACs_list, LAT_list)
-plt.title('MACs vs Latency', fontsize = 20)
+plt.plot(MMACs_list, POW_list)
+plt.title('MAC vs Power', fontsize = 20)
 plt.xlabel('#MACs (Million)', fontsize = 18)
-plt.ylabel('Latency (ms)', fontsize = 18)
+plt.ylabel('Power (W)', fontsize = 18)
+plt.grid()
+
+plt.figure()
+plt.plot(LAT_list, POW_list)
+plt.title('Latency vs Power', fontsize = 20)
+plt.xlabel('Latency (ms)', fontsize = 18)
+plt.ylabel('Power (W)', fontsize = 18)
 plt.grid()
 
 plt.show()
