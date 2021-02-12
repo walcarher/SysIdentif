@@ -20,12 +20,12 @@ else :
 
 # Size of input tensor
 #WH_in_list = [224, 32]
-WH_in_list = np.linspace(11, 224, 10, dtype = int ).tolist()
+WH_in_list = np.linspace(11, 100, 10, dtype = int ).tolist()
 #C_in_list = [3, 512]
-C_in_list = np.linspace(3, 1024, 10, dtype = int ).tolist()
+C_in_list = np.linspace(3, 512, 10, dtype = int ).tolist()
 # Vector list of multiple output tensor channels (number of filters)
 #C_out_list = [32, 1024]
-C_out_list = np.linspace(1, 1024, 10, dtype = int ).tolist()
+C_out_list = np.linspace(1, 512, 10, dtype = int ).tolist()
 # Number of iterations to be averaged
 n_iter = 10
 # Delay between tests for memory synchronization
