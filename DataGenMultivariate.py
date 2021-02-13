@@ -20,12 +20,12 @@ else :
 
 # Size of input tensor
 #WH_in_list = [224, 32]
-WH_in_list = np.linspace(11, 100, 3, dtype = int ).tolist()
+WH_in_list = np.linspace(11, 100, 10, dtype = int ).tolist()
 #C_in_list = [3, 512]
-C_in_list = np.linspace(3, 512, 3, dtype = int ).tolist()
+C_in_list = np.linspace(3, 512, 10, dtype = int ).tolist()
 # Vector list of multiple output tensor channels (number of filters)
 #C_out_list = [32, 1024]
-C_out_list = np.linspace(1, 512, 3, dtype = int ).tolist()
+C_out_list = np.linspace(1, 512, 10, dtype = int ).tolist()
 # Number of iterations to be averaged
 n_iter = 10
 # Delay between tests for memory synchronization
@@ -120,42 +120,36 @@ for WH_in in WH_in_list:
             convkxk_s1_net_list = [Conv1x1_s1_Net().cuda(), Conv3x3_s1_Net().cuda(), Conv5x5_s1_Net().cuda(), Conv7x7_s1_Net().cuda(), Conv11x11_s1_Net().cuda()]
             
             for convkxk_s1_net in convkxk_s1_net_list:
-            
-                print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out))
+                      
                 # Delay  
                 time.sleep(time_delay)
                 
                 elapsed_time = 0.0
                 iter = 0
                 power = 0
-                # Dummy convolution for device initialization
                 torch.cuda.seed()
                 input = torch.rand(1, C_in, WH_in, WH_in).cuda()
                 convkxk_s1_net.conv1.weight.data.random_().cuda()
                 convkxk_s1_net.conv1.bias.data.random_().cuda()
-                torch.cuda.synchronize()
+                convkxk_s1_net.cuda()            
                 out = convkxk_s1_net(input).cuda()
-                with open(gpuLoadFile, 'r') as gpuFile:
-                    power += float(gpuFile.read())
-                torch.cuda.synchronize()
-                
-                power = 0
-                
+                torch.cuda.synchronize()                
+                print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out))
+                start = time.time()
                 # Iterate over multiple tests
-                while(iter < n_iter):
+                while(iter < n_iter): 
                     torch.cuda.seed()
                     input = torch.rand(1, C_in, WH_in, WH_in).cuda()
                     convkxk_s1_net.conv1.weight.data.random_().cuda()
                     convkxk_s1_net.conv1.bias.data.random_().cuda()
-                    torch.cuda.synchronize()
+                    convkxk_s1_net.cuda()            
                     out = convkxk_s1_net(input).cuda()
-                    start = time.time()
                     with open(gpuLoadFile, 'r') as gpuFile:
                         power += float(gpuFile.read())
                     torch.cuda.synchronize()
-                    end = time.time()
-                    elapsed_time += end - start
                     iter += 1
+                 
+                elapsed_time = time.time() - start
         
                 # Obtained results
                 av_elapsed_time = elapsed_time/n_iter
