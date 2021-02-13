@@ -50,7 +50,7 @@ POW_WHC = []
 E_WHC = []
 T_WHC = []
 # Performance vs k and N (Input tensor size WH_in and C_in are constant)
-WH_const = 50
+WH_const = 100
 C_const = 512
 k_var = []
 N_var = []
@@ -76,8 +76,7 @@ for sample in dataset:
         E_kN.append(sample[6])
         T_kN.append(sample[7])       
 
-
-# Plot subsampled dataset
+# Plot subsampled dataset for 3D Visualization
 # Latency vs Input tensor size (LAT vs WH and C) with kernel size and depth constant (k and N)
 fig1 = plt.figure()
 X = np.array(WH_var)

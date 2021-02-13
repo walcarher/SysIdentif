@@ -20,12 +20,12 @@ else :
 
 # Size of input tensor
 #WH_in_list = [224, 32]
-WH_in_list = np.linspace(11, 100, 10, dtype = int ).tolist()
+WH_in_list = np.linspace(11, 100, 3, dtype = int ).tolist()
 #C_in_list = [3, 512]
-C_in_list = np.linspace(3, 512, 10, dtype = int ).tolist()
+C_in_list = np.linspace(3, 512, 3, dtype = int ).tolist()
 # Vector list of multiple output tensor channels (number of filters)
 #C_out_list = [32, 1024]
-C_out_list = np.linspace(1, 512, 10, dtype = int ).tolist()
+C_out_list = np.linspace(1, 512, 3, dtype = int ).tolist()
 # Number of iterations to be averaged
 n_iter = 10
 # Delay between tests for memory synchronization
@@ -117,7 +117,7 @@ for WH_in in WH_in_list:
                     #x = self.conv1(x).cuda()
                     return x
 
-            convkxk_s1_net_list = [Conv1x1_s1_Net(), Conv3x3_s1_Net(), Conv5x5_s1_Net(), Conv7x7_s1_Net(), Conv11x11_s1_Net()]
+            convkxk_s1_net_list = [Conv1x1_s1_Net().cuda(), Conv3x3_s1_Net().cuda(), Conv5x5_s1_Net().cuda(), Conv7x7_s1_Net().cuda(), Conv11x11_s1_Net().cuda()]
             
             for convkxk_s1_net in convkxk_s1_net_list:
             
@@ -134,19 +134,17 @@ for WH_in in WH_in_list:
                 # Iterate over multiple tests
                 while(iter < n_iter):
                     torch.cuda.seed()
-                    input = torch.rand(1, C_in, WH_in, WH_in).cuda()
+                    input = Variable(torch.rand(1, C_in, WH_in, WH_in).cuda())
                     convkxk_s1_net.conv1.weight.data.random_().cuda()
                     convkxk_s1_net.conv1.bias.data.random_().cuda()
-                    start = time.time()
+                    torch.cuda.synchronize()
                     out = convkxk_s1_net(input).cuda()
+                    start = time.time()
                     with open(gpuLoadFile, 'r') as gpuFile:
                         power += float(gpuFile.read())
                     torch.cuda.synchronize()
                     end = time.time()
                     elapsed_time += end - start
-                    # Discard first measure, somehow the first measurement does some initialization 
-                    if WH_in == WH_in_list[0] and C_in == C_in_list[0] and C_out == C_out_list[0] and convkxk_s1_net.conv1.kernel_size[0] == convkxk_s1_net_list[0].conv1.kernel_size[0]:
-                        power = 0
                     iter += 1
         
                 # Obtained results
