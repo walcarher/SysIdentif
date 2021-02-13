@@ -145,7 +145,7 @@ for WH_in in WH_in_list:
                     end = time.time()
                     elapsed_time += end - start
                     # Discard first measure, somehow the first measurement does some initialization 
-                    if WH_in == WH_in_list[0] and C_in == C_in_list[0] and C_out == C_out_list[0] and convkxk_s1_net.conv1.kernel_size[0] == convkxk_s1_net_list[0]conv1.kernel_size[0]:
+                    if WH_in == WH_in_list[0] and C_in == C_in_list[0] and C_out == C_out_list[0] and convkxk_s1_net.conv1.kernel_size[0] == convkxk_s1_net_list[0].conv1.kernel_size[0]:
                         power = 0
                     iter += 1
         
