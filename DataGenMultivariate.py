@@ -40,6 +40,7 @@ dataset = []
 # This files are to be found in the L4T version of TX2, this may vary in the future
 # It reads the latest GPU Power in mW from the INA3221 in the TegraTX2
 gpuLoadFile = '/sys/devices/3160000.i2c/i2c-0/0-0040/iio_device/in_power0_input'
+gpuFile = open(gpuLoadFile, 'r')
 
 
 for WH_in in WH_in_list:
@@ -138,9 +139,8 @@ for WH_in in WH_in_list:
                     convkxk_s1_net.conv1.weight.data.random_().cuda()
                     convkxk_s1_net.conv1.bias.data.random_().cuda()
                     start = time.time()
-                    out = convkxk_s1_net(input).cuda()
-                    with open(gpuLoadFile, 'r') as gpuFile:
-                        power += float(gpuFile.read())
+                    out = convkxk_s1_net(input).cuda()                    
+                    power += float(gpuFile.read())
                     torch.cuda.synchronize()
                     end = time.time()
                     elapsed_time += end - start
