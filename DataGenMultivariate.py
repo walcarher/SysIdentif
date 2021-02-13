@@ -129,8 +129,18 @@ for WH_in in WH_in_list:
                 iter = 0
                 power = 0
                 # Dummy convolution for device initialization
-                dummy_input = torch.rand(1, C_in, WH_in, WH_in).cuda()
-                dummy_out = convkxk_s1_net(dummy_input).cuda()
+                torch.cuda.seed()
+                input = torch.rand(1, C_in, WH_in, WH_in).cuda()
+                convkxk_s1_net.conv1.weight.data.random_().cuda()
+                convkxk_s1_net.conv1.bias.data.random_().cuda()
+                torch.cuda.synchronize()
+                out = convkxk_s1_net(input).cuda()
+                with open(gpuLoadFile, 'r') as gpuFile:
+                    power += float(gpuFile.read())
+                torch.cuda.synchronize()
+                
+                power = 0
+                
                 # Iterate over multiple tests
                 while(iter < n_iter):
                     torch.cuda.seed()
