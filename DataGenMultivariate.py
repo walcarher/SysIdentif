@@ -122,12 +122,15 @@ for WH_in in WH_in_list:
             for convkxk_s1_net in convkxk_s1_net_list:
             
                 print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out))
-                  
+                # Delay  
                 time.sleep(time_delay)
-    
+                
                 elapsed_time = 0.0
                 iter = 0
                 power = 0
+                # Dummy convolution for device initialization
+                dummy_input = torch.rand(1, C_in, WH_in, WH_in).cuda()
+                dummy_out = convkxk_s1_net(dummy_input).cuda()
                 # Iterate over multiple tests
                 while(iter < n_iter):
                     torch.cuda.seed()
@@ -148,7 +151,7 @@ for WH_in in WH_in_list:
                 LAT = 1000*av_elapsed_time # in miliSeconds
                 av_power = power/n_iter
                 POW = av_power/1000 # in Watts
-                E = (av_power/1000) * av_elapsed_time # in Joules
+                E = POW * av_elapsed_time # in Joules
                 T = WH_in * WH_in * C_in * 4 / (av_elapsed_time * 1024 * 1024 * 1024) # in GBytes/seconds
                 torch.cuda.empty_cache()
                 

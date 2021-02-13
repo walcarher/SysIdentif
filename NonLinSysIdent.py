@@ -41,7 +41,7 @@ def PolyModel(x, a3, a2, a1, a0):
 
 # Defining constant and variable inputs for Dataset subsampling for 3D visualization
 # Performance vs WH and C (filter size k and number of filters N are constant)
-k_const = 3
+k_const = 11
 N_const = 512
 WH_var = []
 C_var = []
@@ -66,14 +66,14 @@ for sample in dataset:
         C_var.append(sample[1])
         LAT_WHC.append(sample[4])
         POW_WHC.append(sample[5])
-        E_WHC.append(sample[6]*1000000)
+        E_WHC.append(sample[6])
         T_WHC.append(sample[7])
     elif sample[0] == WH_const and sample[1] == C_const:
         k_var.append(sample[2])
         N_var.append(sample[3])
         LAT_kN.append(sample[4])
         POW_kN.append(sample[5])
-        E_kN.append(sample[6]*1000000)
+        E_kN.append(sample[6])
         T_kN.append(sample[7])       
 
 
