@@ -134,7 +134,7 @@ for WH_in in WH_in_list:
                 # Iterate over multiple tests
                 while(iter < n_iter):
                     torch.cuda.seed()
-                    input = Variable(torch.rand(1, C_in, WH_in, WH_in).cuda())
+                    input = torch.rand(1, C_in, WH_in, WH_in).cuda()
                     convkxk_s1_net.conv1.weight.data.random_().cuda()
                     convkxk_s1_net.conv1.bias.data.random_().cuda()
                     torch.cuda.synchronize()
