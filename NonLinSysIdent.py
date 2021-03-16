@@ -66,13 +66,13 @@ def PolyModel(x, a3, a2, a1, a0):
 
 # Defining constant and variable inputs for Dataset subsampling for 3D visualization
 # Performance vs WH and C (filter size k and number of filters N are constant)
-k_const = 11
-N_const = 512
+k_const = 5
+N_const = 284
 WH_var, C_var, LAT_WHC, POW_WHC, E_WHC, T_WHC = [],[],[],[],[],[]
 
 # Performance vs k and N (Input tensor size WH_in and C_in are constant)
-WH_const = 100
-C_const = 512
+WH_const = 70
+C_const = 285
 k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
 
 # Retrieving sample data from Dataset (sample = [WH, C, k, N, LAT, POW, E, T])
@@ -84,7 +84,7 @@ for sample in dataset:
         POW_WHC.append(sample[5])
         E_WHC.append(sample[6])
         T_WHC.append(sample[7])
-    elif sample[0] == WH_const and sample[1] == C_const:
+    if sample[0] == WH_const and sample[1] == C_const:
         k_var.append(sample[2])
         N_var.append(sample[3])
         LAT_kN.append(sample[4])
@@ -228,10 +228,6 @@ if args.data_plot:
     #ax.set_zlim(,)
 
 # Defining constant and variable inputs for Dataset subsampling for SI
-k_const = 11
-N_const = 512
-WH_const = 100
-C_const = 512
 WH_var, LAT_WH, POW_WH, E_WH, T_WH = [],[],[],[],[]
 C_var, LAT_C, POW_C, E_C, T_C = [],[],[],[],[]
 k_var, LAT_k, POW_k, E_k, T_k = [],[],[],[],[]
@@ -245,19 +241,19 @@ for sample in dataset:
         POW_WH.append(sample[5])
         E_WH.append(sample[6])
         T_WH.append(sample[7])
-    elif sample[0] == WH_const and sample[2] == k_const and sample[3] == N_const:
+    if sample[0] == WH_const and sample[2] == k_const and sample[3] == N_const:
         C_var.append(sample[1])
         LAT_C.append(sample[4])
         POW_C.append(sample[5])
         E_C.append(sample[6])
         T_C.append(sample[7])
-    elif sample[0] == WH_const and sample[1] == C_const and sample[3] == N_const:
+    if sample[0] == WH_const and sample[1] == C_const and sample[3] == N_const:
         k_var.append(sample[2])
         LAT_k.append(sample[4])
         POW_k.append(sample[5])
         E_k.append(sample[6])
         T_k.append(sample[7])
-    elif sample[0] == WH_const and sample[1] == C_const and sample[2] == k_const:
+    if sample[0] == WH_const and sample[1] == C_const and sample[2] == k_const:
         N_var.append(sample[3])
         LAT_N.append(sample[4])
         POW_N.append(sample[5])
@@ -290,46 +286,26 @@ if args.result_plot:
     # Ordered KPI names
     kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
     # with units
-    kpi_units = ['ms', 'mW', 'J', 'GB/s']
+    kpi_units = ['ms', 'W', 'J', 'GB/s']
     # Ordered feature names
-    feature_names =['Input Tensor Size', 'Input Tensor Depth', 'Kernel size', 'Number of Kernel Filters']
+    feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel size', 'Number of Kernel Filters']
     # with 
-    feature_symbol =['WH', 'C', 'k', 'N']
+    feature_symbol = ['WH', 'C', 'k', 'N']
     # plot colors and markers configurations
     configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
     i = 0
-    plt.figure()
-    plt.plot(features[0], kpis_variable[0][0], 'go', label='data')
-    for Model, config in zip(Models, configs):
-        plt.plot(features[0], Model(np.asarray(features[0]), *parameters[i]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[i])
-        i += 1
-    plt.title('Latency vs Input Tensor size')
-    plt.xlabel('Input Tensor Size (WH)')
-    plt.ylabel('Latency (ms)')
-    plt.grid()
-    plt.legend()
-    plt.figure()
-    plt.plot(features[1], kpis_variable[0][1], 'go', label='data')
-    for Model, config in zip(Models, configs):
-        plt.plot(features[1], Model(np.asarray(features[1]), *parameters[i]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[i])
-        i += 1
-    plt.title('Latency vs Input Tensor Depth')
-    plt.xlabel('Input Tensor Depth (C)')
-    plt.ylabel('Latency (ms)')
-    plt.grid()
-    plt.legend()
-    plt.figure()
-    plt.plot(features[2], kpis_variable[0][2], 'go', label='data')
-    plt.plot(features[2], LinModel(np.asarray(features[2]), *parameters[10]), 'r-', label=r'Linear: $RMSE=%5.3f$' % rmses[10])
-    plt.plot(features[2], QuadModel(np.asarray(features[2]), *parameters[11]), 'cs-', label=r'Quadratic: $RMSE=%5.3f$' % rmses[11])
-    plt.plot(features[2], LogModel(np.asarray(features[2]), *parameters[12]), 'm^-', label=r'Logarithmic: $RMSE=%5.3f$' % rmses[12])
-    plt.plot(features[2], ExpModel(np.asarray(features[2]), *parameters[13]), 'bD-', label=r'Exponential: $RMSE=%5.3f$' % rmses[13])
-    plt.plot(features[2], PolyModel(np.asarray(features[2]), *parameters[14]), 'yp-', label=r'Polynomial: $RMSE=%5.3f$' % rmses[14])
-    plt.title('Latency vs Filter size')
-    plt.xlabel('Filter size (k)')
-    plt.ylabel('Latency (ms)')
-    plt.grid()
-    plt.legend()
+    for k in range(len(kpi_names)):
+        for j in range(len(feature_names)):
+            plt.figure()
+            plt.plot(features[j], kpis_variable[k][j], 'go', label='data')
+            for Model, config in zip(Models, configs):
+                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[i]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[i])
+                i += 1
+            plt.title(kpi_names[k] + ' vs ' + feature_names[j])
+            plt.xlabel(feature_names[j] + ' (' + feature_symbol[j] + ')')
+            plt.ylabel(kpi_names[k] + ' (' + kpi_units[k] + ')')
+            plt.grid()
+            plt.legend()   
     
 
 # ----------------- Strong Regressor System Identification ----------------------------
