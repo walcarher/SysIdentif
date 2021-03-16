@@ -28,23 +28,37 @@ if not dataset:
     sys.exit("Data loaded was empty from datasetMultivariate.pkl file")
 
 # Single Variable Weak Regressor/Learners definition
+
+class Name:
+    def __init__(self, r):
+        self.name = r
+
+    def __call__(self, f):
+        f.name = self.name
+        return f
+
 # Linear model
+@Name('Linear')
 def LinModel(x, a1, a0):
     return a1*x + a0
 
-# Quadratic model    
+# Quadratic model
+@Name('Quadratic')
 def QuadModel(x, a2, a1, a0):
     return a2*np.power(x, 2) + a1*x + a0
 
-# Logarithmic model    
+# Logarithmic model
+@Name('Logarithmic')  
 def LogModel(x, a1, a0):
     return a1*np.log(x) + a0
     
-# Exponential model    
-def ExpModel(x, a1, a0):
-    return a1*np.exp(x) + a0
+# Exponential model   
+@Name('Exponential') 
+def ExpModel(x, a2, a1, a0):
+    return a2*np.power(a1, x) + a0
     
-# Polynomial model    
+# Polynomial model   
+@Name('Polynomial') 
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
 
@@ -223,7 +237,7 @@ C_var, LAT_C, POW_C, E_C, T_C = [],[],[],[],[]
 k_var, LAT_k, POW_k, E_k, T_k = [],[],[],[],[]
 N_var, LAT_N, POW_N, E_N, T_N = [],[],[],[],[]
 
-# Retrieving sample data from Dataset fo SI(sample = [WH, C, k, N, LAT, POW, E, T])
+# Retrieving sample data from Dataset for SI(sample = [WH, C, k, N, LAT, POW, E, T])
 for sample in dataset:
     if  sample[1] == C_const and sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
@@ -249,23 +263,76 @@ for sample in dataset:
         POW_N.append(sample[5])
         E_N.append(sample[6])
         T_N.append(sample[7]) 
-           
-LAT_WH_LinPar, LAT_WH_LinCov = curve_fit(LinModel, WH_var, LAT_WH)
-LAT_WH_QuadPar, LAT_WH_QuadCov = curve_fit(QuadModel, WH_var, LAT_WH)
-LAT_WH_LogPar, LAT_WH_LogCov = curve_fit(LogModel, WH_var, LAT_WH)
-LAT_WH_ExpPar, LAT_WH_ExpCov = curve_fit(ExpModel, WH_var, LAT_WH)
-LAT_WH_PolyPar, LAT_WH_PolyCov = curve_fit(PolyModel, WH_var, LAT_WH)
+        
+# Lists of KPIs per feature
+kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [E_WH, E_C, E_k, E_N], [T_WH, T_C, T_k, T_N]]
+# List of features
+features = [WH_var, C_var, k_var, N_var]
+# Previously defined models
+Models = [LinModel, QuadModel, LogModel, ExpModel, PolyModel]
+# Obtained optimal parameters 
+parameters = []
+# Obtained RMSE
+rmses = []
 
-fig8 = plt.figure()
-plt.plot(WH_var, LAT_WH, 'g', label='data')
-plt.plot(WH_var, LinModel(np.asarray(WH_var), *LAT_WH_LinPar), 'r', label='Linear: a1=%5.3f, a0=%5.3f' % tuple(LAT_WH_LinPar))
-plt.plot(WH_var, QuadModel(np.asarray(WH_var), *LAT_WH_QuadPar), 'o-', label='Quadratic: a2=%5.3f, a1=%5.3f, a0=%5.3f' % tuple(LAT_WH_QuadPar))
-plt.plot(WH_var, LogModel(np.asarray(WH_var), *LAT_WH_LogPar), 'p-', label='Logarithmic: a1=%5.3f, a0=%5.3f' % tuple(LAT_WH_LogPar))
-plt.plot(WH_var, ExpModel(np.asarray(WH_var), *LAT_WH_ExpPar), 'b-', label='Exponential: a1=%5.3f, a0=%5.3f' % tuple(LAT_WH_ExpPar))
-plt.plot(WH_var, PolyModel(np.asarray(WH_var), *LAT_WH_PolyPar), 'y-', label='Polynomial: a3=%5.3f, a2=%5.3f, a1=%5.3f, a0=%5.3f' % tuple(LAT_WH_PolyPar))
-plt.grid()
+# # Models for each feature by keeping all others features constant using LM method for curve fitting 
+for kpis in kpis_variable:
+    for feature, kpi in zip(features, kpis):
+        for Model in Models:
+            parameter, covariance = curve_fit(Model, feature, kpi, maxfev=5000)
+            parameters.append(parameter)
+            # Computing RMSE
+            rmse = np.sqrt(np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)/(len(kpi) - len(parameter)))
+            rmses.append(rmse)
+
+
+if args.result_plot:
+    # Ordered KPI names
+    kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
+    # with units
+    kpi_units = ['ms', 'mW', 'J', 'GB/s']
+    # Ordered feature names
+    feature_names =['Input Tensor Size', 'Input Tensor Depth', 'Kernel size', 'Number of Kernel Filters']
+    # with 
+    feature_symbol =['WH', 'C', 'k', 'N']
+    # plot colors and markers configurations
+    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
+    i = 0
+    plt.figure()
+    plt.plot(features[0], kpis_variable[0][0], 'go', label='data')
+    for Model, config in zip(Models, configs):
+        plt.plot(features[0], Model(np.asarray(features[0]), *parameters[i]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[i])
+        i += 1
+    plt.title('Latency vs Input Tensor size')
+    plt.xlabel('Input Tensor Size (WH)')
+    plt.ylabel('Latency (ms)')
+    plt.grid()
+    plt.legend()
+    plt.figure()
+    plt.plot(features[1], kpis_variable[0][1], 'go', label='data')
+    for Model, config in zip(Models, configs):
+        plt.plot(features[1], Model(np.asarray(features[1]), *parameters[i]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[i])
+        i += 1
+    plt.title('Latency vs Input Tensor Depth')
+    plt.xlabel('Input Tensor Depth (C)')
+    plt.ylabel('Latency (ms)')
+    plt.grid()
+    plt.legend()
+    plt.figure()
+    plt.plot(features[2], kpis_variable[0][2], 'go', label='data')
+    plt.plot(features[2], LinModel(np.asarray(features[2]), *parameters[10]), 'r-', label=r'Linear: $RMSE=%5.3f$' % rmses[10])
+    plt.plot(features[2], QuadModel(np.asarray(features[2]), *parameters[11]), 'cs-', label=r'Quadratic: $RMSE=%5.3f$' % rmses[11])
+    plt.plot(features[2], LogModel(np.asarray(features[2]), *parameters[12]), 'm^-', label=r'Logarithmic: $RMSE=%5.3f$' % rmses[12])
+    plt.plot(features[2], ExpModel(np.asarray(features[2]), *parameters[13]), 'bD-', label=r'Exponential: $RMSE=%5.3f$' % rmses[13])
+    plt.plot(features[2], PolyModel(np.asarray(features[2]), *parameters[14]), 'yp-', label=r'Polynomial: $RMSE=%5.3f$' % rmses[14])
+    plt.title('Latency vs Filter size')
+    plt.xlabel('Filter size (k)')
+    plt.ylabel('Latency (ms)')
+    plt.grid()
+    plt.legend()
+    
 
 # ----------------- Strong Regressor System Identification ----------------------------
 
-plt.legend()
 plt.show()
+
