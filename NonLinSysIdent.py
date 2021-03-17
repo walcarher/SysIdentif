@@ -28,7 +28,7 @@ if not dataset:
     sys.exit("Data loaded was empty from datasetMultivariate.pkl file")
 
 # Single Variable Weak Regressor/Learners definition
-
+# Function attributes
 class Name:
     def __init__(self, r):
         self.name = r
@@ -37,6 +37,7 @@ class Name:
         f.name = self.name
         return f
 
+# Weak regressor models before selection
 # Linear model
 @Name('Linear')
 def LinModel(x, a1, a0):
@@ -61,6 +62,17 @@ def ExpModel(x, a2, a1, a0):
 @Name('Polynomial') 
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
+    
+# Strong regressor aggregation or combination model after selection
+#@Name('Aggregation')
+#def AggModel():
+
+# Error and Loss Metrics function definition
+def RMSE(kpi, feature, Model, parameter):
+    return np.sqrt(np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)/len(kpi))
+    
+def L2LSELoss(kpi, feature, Model, parameter, regLambda):
+    return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2) + regLambda * np.sum(parameter ** 2)
 
 # ----------------- Weak Regressor System Identification ----------------------------
 
@@ -266,49 +278,78 @@ kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [
 features = [WH_var, C_var, k_var, N_var]
 # Previously defined models
 Models = [LinModel, QuadModel, LogModel, ExpModel, PolyModel]
+# Ordered KPI names
+kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
+# with units
+kpi_units = ['ms', 'W', 'J', 'GB/s']
+# Ordered feature names
+feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel size', 'Number of Kernel Filters']
+# with 
+feature_symbol = ['WH', 'C', 'k', 'N']
 # Obtained optimal parameters 
 parameters = []
 # Obtained RMSE
 rmses = []
+# Obtained losses
+losses = []
 
 # # Models for each feature by keeping all others features constant using LM method for curve fitting 
 for kpis in kpis_variable:
     for feature, kpi in zip(features, kpis):
         for Model in Models:
-            parameter, covariance = curve_fit(Model, feature, kpi, maxfev=5000)
+            parameter, covariance = curve_fit(Model, feature, kpi, maxfev=2000)
             parameters.append(parameter)
             # Computing RMSE
-            rmse = np.sqrt(np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)/(len(kpi) - len(parameter)))
+            rmse = RMSE(kpi, feature, Model, parameter)
             rmses.append(rmse)
-
-
+            # Computing LSE Losses with L2 regularization
+            l2_lseloss =L2LSELoss(kpi, feature, Model, parameter, 100)
+            losses.append(l2_lseloss)
+        
+# Plot results
 if args.result_plot:
-    # Ordered KPI names
-    kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
-    # with units
-    kpi_units = ['ms', 'W', 'J', 'GB/s']
-    # Ordered feature names
-    feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel size', 'Number of Kernel Filters']
-    # with 
-    feature_symbol = ['WH', 'C', 'k', 'N']
     # plot colors and markers configurations
     configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
-    i = 0
-    for k in range(len(kpi_names)):
+    k = 0
+    for i in range(len(kpi_names)):
         for j in range(len(feature_names)):
             plt.figure()
-            plt.plot(features[j], kpis_variable[k][j], 'go', label='data')
+            plt.plot(features[j], kpis_variable[i][j], 'go', label='data')
             for Model, config in zip(Models, configs):
-                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[i]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[i])
-                i += 1
-            plt.title(kpi_names[k] + ' vs ' + feature_names[j])
+                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[k]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[k] +  r', $Loss=%5.3f$' % losses[k])
+                k += 1
+            plt.title(kpi_names[i] + ' vs ' + feature_names[j])
             plt.xlabel(feature_names[j] + ' (' + feature_symbol[j] + ')')
-            plt.ylabel(kpi_names[k] + ' (' + kpi_units[k] + ')')
+            plt.ylabel(kpi_names[i] + ' (' + kpi_units[i] + ')')
             plt.grid()
             plt.legend()   
     
 
 # ----------------- Strong Regressor System Identification ----------------------------
-
+# Competittive selection by LSE with L2 regularization as Loss function
+wr_ensembleLoss = []
+wr_ensembleParameters = []
+selectedModels = []
+selectedParameters = []
+i = 0
+j = 0
+k = 0
+for kpis in kpis_variable:
+    print(kpi_names[i] + ' KPI models:')
+    for feature, kpi in zip(features, kpis):
+        for Model in Models:
+            wr_ensembleLoss.append(losses[k])
+            wr_ensembleParameters.append(parameters[k])
+            k += 1
+        selectedModel = Models[np.argmin(wr_ensembleLoss)]
+        selectedParameter = parameters[np.argmin(wr_ensembleLoss)]
+        print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature')
+        selectedModels.append(selectedModel)
+        selectedParameters.append(selectedParameter)
+        wr_ensembleLoss = []
+        wr_ensembleParameters = []
+        j += 1
+    j = 0
+    i += 1
 plt.show()
 
