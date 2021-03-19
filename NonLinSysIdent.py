@@ -8,6 +8,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import curve_fit
 import pickle
 
+# Interactive plotting for matplotlib
+plt.ioff()
+
 # Argument configuration
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--data_plot", type = int, choices=[0, 1],
@@ -68,11 +71,25 @@ def PolyModel(x, a3, a2, a1, a0):
 #def AggModel():
 
 # Error and Loss Metrics function definition
+# Root Mean Square Error
 def RMSE(kpi, feature, Model, parameter):
     return np.sqrt(np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)/len(kpi))
-    
-def L2LSELoss(kpi, feature, Model, parameter, regLambda):
-    return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2) + regLambda * np.sum(parameter ** 2)
+
+# Total Least Square Error cost function with L1 regularization term   
+def LSEL1Cost(kpi, feature, Model, parameter, regLambda):
+    return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2) + (regLambda * np.sum(np.absolute(parameter)))
+
+# Total Least Square Error cost function with L2 regularization term   
+def LSEL2Cost(kpi, feature, Model, parameter, regLambda):
+    return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2) + (regLambda * np.sum(parameter ** 2))
+
+# Root Mean Square Error cost function with L1 regularization term   
+def RMSEL1Cost(rmse, parameter, regLambda):
+    return rmse + (regLambda * np.sum(np.absolute(parameter)))
+
+# Root Mean Square Error cost function with L2 regularization term   
+def RMSEL2Cost(rmse, parameter, regLambda):
+    return rmse + (regLambda * np.sum(parameter ** 2))
 
 # ----------------- Weak Regressor System Identification ----------------------------
 
@@ -103,7 +120,6 @@ for sample in dataset:
         POW_kN.append(sample[5])
         E_kN.append(sample[6])
         T_kN.append(sample[7])       
-
 
 # Plot subsampled dataset for 3D Visualization if data_plot is enabled
 if args.data_plot:
@@ -290,44 +306,25 @@ feature_symbol = ['WH', 'C', 'k', 'N']
 parameters = []
 # Obtained RMSE
 rmses = []
-# Obtained losses
-losses = []
+# Obtained cost values
+costs = []
 
 # # Models for each feature by keeping all others features constant using LM method for curve fitting 
 for kpis in kpis_variable:
     for feature, kpi in zip(features, kpis):
         for Model in Models:
-            parameter, covariance = curve_fit(Model, feature, kpi, maxfev=2000)
+            parameter, covariance = curve_fit(Model, feature, kpi, maxfev=10000)
             parameters.append(parameter)
             # Computing RMSE
             rmse = RMSE(kpi, feature, Model, parameter)
             rmses.append(rmse)
-            # Computing LSE Losses with L2 regularization
-            l2_lseloss =L2LSELoss(kpi, feature, Model, parameter, 100)
-            losses.append(l2_lseloss)
-        
-# Plot results
-if args.result_plot:
-    # plot colors and markers configurations
-    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
-    k = 0
-    for i in range(len(kpi_names)):
-        for j in range(len(feature_names)):
-            plt.figure()
-            plt.plot(features[j], kpis_variable[i][j], 'go', label='data')
-            for Model, config in zip(Models, configs):
-                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[k]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[k] +  r', $Loss=%5.3f$' % losses[k])
-                k += 1
-            plt.title(kpi_names[i] + ' vs ' + feature_names[j])
-            plt.xlabel(feature_names[j] + ' (' + feature_symbol[j] + ')')
-            plt.ylabel(kpi_names[i] + ' (' + kpi_units[i] + ')')
-            plt.grid()
-            plt.legend()   
-    
+            # Computing cost with LSE Loss and L2 regularization
+            cost = RMSEL1Cost(rmse, parameter, 1000)
+            costs.append(cost)               
 
 # ----------------- Strong Regressor System Identification ----------------------------
 # Competittive selection by LSE with L2 regularization as Loss function
-wr_ensembleLoss = []
+wr_ensembleCost = []
 wr_ensembleParameters = []
 selectedModels = []
 selectedParameters = []
@@ -338,18 +335,38 @@ for kpis in kpis_variable:
     print(kpi_names[i] + ' KPI models:')
     for feature, kpi in zip(features, kpis):
         for Model in Models:
-            wr_ensembleLoss.append(losses[k])
+            wr_ensembleCost.append(costs[k])
             wr_ensembleParameters.append(parameters[k])
             k += 1
-        selectedModel = Models[np.argmin(wr_ensembleLoss)]
-        selectedParameter = parameters[np.argmin(wr_ensembleLoss)]
+        selectedModel = Models[np.argmin(wr_ensembleCost)]
+        selectedParameter = parameters[np.argmin(wr_ensembleCost)]
         print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature')
         selectedModels.append(selectedModel)
         selectedParameters.append(selectedParameter)
-        wr_ensembleLoss = []
+        wr_ensembleCost = []
         wr_ensembleParameters = []
         j += 1
     j = 0
     i += 1
+
+# Plot results
+if args.result_plot:
+    # plot colors and markers configurations
+    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
+    k = 0
+    for i in range(len(kpi_names)):
+        for j in range(len(feature_names)):
+            plt.figure()
+            plt.plot(features[j], kpis_variable[i][j], 'go', label='data')
+            for Model, config in zip(Models, configs):
+                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[k]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[k] +  r', $Cost=%5.3f$' % costs[k])
+                k += 1
+            plt.title(kpi_names[i] + ' vs ' + feature_names[j])
+            plt.xlabel(feature_names[j] + ' (' + feature_symbol[j] + ')')
+            plt.ylabel(kpi_names[i] + ' (' + kpi_units[i] + ')')
+            plt.grid()
+            plt.legend()
+               
 plt.show()
+#plt.close('all')
 
