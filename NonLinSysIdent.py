@@ -40,7 +40,9 @@ class Name:
         f.name = self.name
         return f
 
-# Weak regressor models before selection
+# Weak regressor with for single-feature modeling before selection
+# x: a vector of K samples of a single-feature
+# ai: number of parameters per model
 # Linear model
 @Name('Linear')
 def LinModel(x, a1, a0):
@@ -66,9 +68,6 @@ def ExpModel(x, a2, a1, a0):
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
     
-# Strong regressor aggregation or combination model after selection
-#@Name('Aggregation')
-#def AggModel():
 
 # Error and Loss Metrics function definition
 # Root Mean Square Error
@@ -95,13 +94,13 @@ def RMSEL2Cost(rmse, parameter, regLambda):
 
 # Defining constant and variable inputs for Dataset subsampling for 3D visualization
 # Performance vs WH and C (filter size k and number of filters N are constant)
-k_const = 5
-N_const = 284
+k_const = 11
+N_const = 512
 WH_var, C_var, LAT_WHC, POW_WHC, E_WHC, T_WHC = [],[],[],[],[],[]
 
 # Performance vs k and N (Input tensor size WH_in and C_in are constant)
-WH_const = 70
-C_const = 285
+WH_const = 100
+C_const = 512
 k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
 
 # Retrieving sample data from Dataset (sample = [WH, C, k, N, LAT, POW, E, T])
@@ -132,8 +131,8 @@ if args.data_plot:
     ax1.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
     ax1.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
     ax1.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
-    plt.title('Latency vs Input tensor size')
-    ax1.set_xlabel('Width and Height (HW)')
+    plt.title('Latency vs Input Tensor Size')
+    ax1.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
     ax1.set_ylabel('Number of Channels (C)')
     #ax.set_ylim(,)
@@ -165,8 +164,8 @@ if args.data_plot:
     ax3.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
     ax3.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
     ax3.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
-    plt.title('Energy vs Input tensor size')
-    ax3.set_xlabel('Width and Height (HW)')
+    plt.title('Energy vs Input Tensor Size')
+    ax3.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
     ax3.set_ylabel('Number of Channels (C)')
     #ax.set_ylim(,)
@@ -198,8 +197,8 @@ if args.data_plot:
     ax5.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
     ax5.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
     ax5.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
-    plt.title('Power vs Input tensor size')
-    ax5.set_xlabel('Width and Height (HW)')
+    plt.title('Power vs Input Tensor Size')
+    ax5.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
     ax5.set_ylabel('Number of Channels (C)')
     #ax.set_ylim(,)
@@ -231,8 +230,8 @@ if args.data_plot:
     ax6.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
     ax6.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
     ax6.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
-    plt.title('Throughput vs Input tensor size')
-    ax6.set_xlabel('Width and Height (HW)')
+    plt.title('Throughput vs Input Tensor Size')
+    ax6.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
     ax6.set_ylabel('Number of Channels (C)')
     #ax.set_ylim(,)
@@ -299,7 +298,7 @@ kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
 # with units
 kpi_units = ['ms', 'W', 'J', 'GB/s']
 # Ordered feature names
-feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel size', 'Number of Kernel Filters']
+feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
 # with 
 feature_symbol = ['WH', 'C', 'k', 'N']
 # Obtained optimal parameters 
@@ -309,7 +308,7 @@ rmses = []
 # Obtained cost values
 costs = []
 
-# # Models for each feature by keeping all others features constant using LM method for curve fitting 
+# Models for each feature by keeping all others features constant using LM method for curve fitting 
 for kpis in kpis_variable:
     for feature, kpi in zip(features, kpis):
         for Model in Models:
@@ -319,7 +318,7 @@ for kpis in kpis_variable:
             rmse = RMSE(kpi, feature, Model, parameter)
             rmses.append(rmse)
             # Computing cost with LSE Loss and L2 regularization
-            cost = RMSEL1Cost(rmse, parameter, 1000)
+            cost = RMSEL2Cost(rmse, parameter, 1000)
             costs.append(cost)               
 
 # ----------------- Strong Regressor System Identification ----------------------------
@@ -366,7 +365,68 @@ if args.result_plot:
             plt.ylabel(kpi_names[i] + ' (' + kpi_units[i] + ')')
             plt.grid()
             plt.legend()
-               
+            
+
+# Multivariate KPI sample initialization
+WH, C, K, N = [],[],[],[]
+LAT, POW, E, T = [],[],[],[]
+
+# Retrieving KPI samples 
+for sample in dataset:
+    WH.append(sample[0])
+    C.append(sample[1])
+    K.append(sample[2])
+    N.append(sample[3])
+    LAT.append(sample[4])
+    POW.append(sample[5])
+    E.append(sample[6])
+    T.append(sample[7])
+
+# Reshaping data                
+featureData = np.array([WH, C, K, N])
+
+# Strong regressor aggregation or combination for multi-feature modeling after selection
+# x: a vector of K samples containin multiple-variables per sample x = (WH, C, k, N) 
+# bj: parameters per model. Must be of the same size as x
+@Name('Latency Aggregation')
+def LatAggModel(x ,b3 ,b2, b1, b0):
+    return b3*selectedModels[0](x[0], *selectedParameters[0]) + \
+    b2*selectedModels[1](x[1], *selectedParameters[1]) + \
+    b1*selectedModels[2](x[2], *selectedParameters[2]) + \
+    b0*selectedModels[3](x[3], *selectedParameters[3])
+    
+@Name('Power Aggregation')
+def PowAggModel(x ,b3 ,b2, b1, b0):
+    return b3*selectedModels[4](x[0], *selectedParameters[4]) + \
+    b2*selectedModels[5](x[1], *selectedParameters[5]) + \
+    b1*selectedModels[6](x[2], *selectedParameters[6]) + \
+    b0*selectedModels[7](x[3], *selectedParameters[7])
+    
+@Name('Energy Aggregation')
+def EneAggModel(x ,b3 ,b2, b1, b0):
+    return b3*selectedModels[8](x[0], *selectedParameters[8]) + \
+    b2*selectedModels[9](x[1], *selectedParameters[9]) + \
+    b1*selectedModels[10](x[2], *selectedParameters[10]) + \
+    b0*selectedModels[11](x[3], *selectedParameters[11])
+    
+@Name('Throughput Aggregation')
+def ThrAggModel(x ,b3 ,b2, b1, b0):
+    return b3*selectedModels[12](x[0], *selectedParameters[12]) + \
+    b2*selectedModels[13](x[1], *selectedParameters[13]) + \
+    b1*selectedModels[14](x[2], *selectedParameters[14]) + \
+    b0*selectedModels[15](x[3], *selectedParameters[15])
+
+LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
+POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
+E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
+T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
+
+print(RMSE(LAT, featureData, LatAggModel, LAT_parameters))
+print(RMSE(POW, featureData, PowAggModel, POW_parameters))
+print(RMSE(E, featureData, EneAggModel, E_parameters))
+print(RMSE(T, featureData, ThrAggModel, T_parameters))
+
 plt.show()
 #plt.close('all')
+
 
