@@ -70,9 +70,17 @@ def PolyModel(x, a3, a2, a1, a0):
     
 
 # Error and Loss Metrics function definition
-# Root Mean Square Error
+# Mean Absolute Percentage Error (MAPE)
+def MAPE(kpi, feature, Model, parameter):
+    return np.absolute(np.sum((kpi - Model(np.asarray(feature), *parameter))/kpi))/len(kpi)
+
+# Root Mean Square Error (RMSE)
 def RMSE(kpi, feature, Model, parameter):
     return np.sqrt(np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)/len(kpi))
+
+# Normalized Root Mean Square Error (NRMSE)
+def NRMSE(kpi, feature, Model, parameter):
+    return np.sqrt(np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)/len(kpi))/(np.max(kpi)-np.min(kpi))
 
 # Total Least Square Error cost function with L1 regularization term   
 def LSEL1Cost(kpi, feature, Model, parameter, regLambda):
@@ -82,13 +90,13 @@ def LSEL1Cost(kpi, feature, Model, parameter, regLambda):
 def LSEL2Cost(kpi, feature, Model, parameter, regLambda):
     return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2) + (regLambda * np.sum(parameter ** 2))
 
-# Root Mean Square Error cost function with L1 regularization term   
-def RMSEL1Cost(rmse, parameter, regLambda):
-    return rmse + (regLambda * np.sum(np.absolute(parameter)))
+# MAPE or RMSE cost function with L1 regularization term   
+def L1Cost(metric, parameter, regLambda):
+    return metric + (regLambda * np.sum(np.absolute(parameter)))
 
-# Root Mean Square Error cost function with L2 regularization term   
-def RMSEL2Cost(rmse, parameter, regLambda):
-    return rmse + (regLambda * np.sum(parameter ** 2))
+# MAPE or RMSE cost function with L2 regularization term   
+def L2Cost(metric, parameter, regLambda):
+    return metric + (regLambda * np.sum(parameter ** 2))
 
 # ----------------- Weak Regressor System Identification ----------------------------
 
@@ -304,7 +312,9 @@ feature_symbol = ['WH', 'C', 'k', 'N']
 # Obtained optimal parameters 
 parameters = []
 # Obtained RMSE
-rmses = []
+nrmses = []
+# Obtained MAPE
+mapes = []
 # Obtained cost values
 costs = []
 
@@ -315,10 +325,13 @@ for kpis in kpis_variable:
             parameter, covariance = curve_fit(Model, feature, kpi, maxfev=10000)
             parameters.append(parameter)
             # Computing RMSE
-            rmse = RMSE(kpi, feature, Model, parameter)
-            rmses.append(rmse)
-            # Computing cost with LSE Loss and L2 regularization
-            cost = RMSEL2Cost(rmse, parameter, 1000)
+            nrmse = NRMSE(kpi, feature, Model, parameter)
+            nrmses.append(nrmse)
+            # Computing MAPE
+            mape = MAPE(kpi, feature, Model, parameter)
+            mapes.append(mape)
+            # Computing cost with a LSE metric Loss and L2 regularization
+            cost = L2Cost(nrmse, parameter, 10)
             costs.append(cost)               
 
 # ----------------- Strong Regressor System Identification ----------------------------
@@ -339,7 +352,8 @@ for kpis in kpis_variable:
             k += 1
         selectedModel = Models[np.argmin(wr_ensembleCost)]
         selectedParameter = parameters[np.argmin(wr_ensembleCost)]
-        print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature')
+        selectedCost = wr_ensembleCost[np.argmin(wr_ensembleCost)]
+        print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature with Cost = %5.3f' % selectedCost)
         selectedModels.append(selectedModel)
         selectedParameters.append(selectedParameter)
         wr_ensembleCost = []
@@ -358,7 +372,7 @@ if args.result_plot:
             plt.figure()
             plt.plot(features[j], kpis_variable[i][j], 'go', label='data')
             for Model, config in zip(Models, configs):
-                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[k]), config, label= Model.name + r': $RMSE=%5.3f$' % rmses[k] +  r', $Cost=%5.3f$' % costs[k])
+                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[k]), config, label= Model.name + r': $NRMSE=%5.3f$' % nrmses[k] +  r', $Cost=%5.3f$' % costs[k])
                 k += 1
             plt.title(kpi_names[i] + ' vs ' + feature_names[j])
             plt.xlabel(feature_names[j] + ' (' + feature_symbol[j] + ')')
@@ -421,10 +435,10 @@ POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev
 E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
 T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
 
-print(RMSE(LAT, featureData, LatAggModel, LAT_parameters))
-print(RMSE(POW, featureData, PowAggModel, POW_parameters))
-print(RMSE(E, featureData, EneAggModel, E_parameters))
-print(RMSE(T, featureData, ThrAggModel, T_parameters))
+print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
+print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
+print(NRMSE(E, featureData, EneAggModel, E_parameters))
+print(NRMSE(T, featureData, ThrAggModel, T_parameters))
 
 plt.show()
 #plt.close('all')
