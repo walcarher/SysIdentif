@@ -19,6 +19,9 @@ parser.add_argument("-d", "--data_plot", type = int, choices=[0, 1],
 parser.add_argument("-r", "--result_plot", type = int, choices=[0, 1],
 		 help = "Shows resulting plots from the best selected models",
 		 default = 0)
+parser.add_argument("-v", "--validation_plot", type = int, choices=[0, 1],
+		 help = "Shows parameter box plots from 10-fold cross validation ",
+		 default = 0)
 args = parser.parse_args()
 
 # Load previously generated dataset from DataGenMultivariate.py
@@ -353,7 +356,8 @@ for kpis in kpis_variable:
         selectedModel = Models[np.argmin(wr_ensembleCost)]
         selectedParameter = parameters[np.argmin(wr_ensembleCost)]
         selectedCost = wr_ensembleCost[np.argmin(wr_ensembleCost)]
-        print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature with Cost = %5.3f' % selectedCost)
+        print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature with Cost = %5.3f' % selectedCost + ' with Parameters: ', end = ' ')
+        print(selectedParameter)
         selectedModels.append(selectedModel)
         selectedParameters.append(selectedParameter)
         wr_ensembleCost = []
@@ -404,42 +408,71 @@ featureData = np.array([WH, C, K, N])
 # bj: parameters per model. Must be of the same size as x
 @Name('Latency Aggregation')
 def LatAggModel(x ,b3 ,b2, b1, b0):
-    return b3*selectedModels[0](x[0], *selectedParameters[0]) + \
-    b2*selectedModels[1](x[1], *selectedParameters[1]) + \
-    b1*selectedModels[2](x[2], *selectedParameters[2]) + \
-    b0*selectedModels[3](x[3], *selectedParameters[3])
+    return b0*selectedModels[0](x[0], *selectedParameters[0]) + \
+    b1*selectedModels[1](x[1], *selectedParameters[1]) + \
+    b2*selectedModels[2](x[2], *selectedParameters[2]) + \
+    b3*selectedModels[3](x[3], *selectedParameters[3])
     
 @Name('Power Aggregation')
 def PowAggModel(x ,b3 ,b2, b1, b0):
-    return b3*selectedModels[4](x[0], *selectedParameters[4]) + \
-    b2*selectedModels[5](x[1], *selectedParameters[5]) + \
-    b1*selectedModels[6](x[2], *selectedParameters[6]) + \
-    b0*selectedModels[7](x[3], *selectedParameters[7])
+    return b0*selectedModels[4](x[0], *selectedParameters[4]) + \
+    b1*selectedModels[5](x[1], *selectedParameters[5]) + \
+    b2*selectedModels[6](x[2], *selectedParameters[6]) + \
+    b3*selectedModels[7](x[3], *selectedParameters[7])
     
 @Name('Energy Aggregation')
 def EneAggModel(x ,b3 ,b2, b1, b0):
-    return b3*selectedModels[8](x[0], *selectedParameters[8]) + \
-    b2*selectedModels[9](x[1], *selectedParameters[9]) + \
-    b1*selectedModels[10](x[2], *selectedParameters[10]) + \
-    b0*selectedModels[11](x[3], *selectedParameters[11])
+    return b0*selectedModels[8](x[0], *selectedParameters[8]) + \
+    b1*selectedModels[9](x[1], *selectedParameters[9]) + \
+    b2*selectedModels[10](x[2], *selectedParameters[10]) + \
+    b3*selectedModels[11](x[3], *selectedParameters[11])
     
 @Name('Throughput Aggregation')
 def ThrAggModel(x ,b3 ,b2, b1, b0):
-    return b3*selectedModels[12](x[0], *selectedParameters[12]) + \
-    b2*selectedModels[13](x[1], *selectedParameters[13]) + \
-    b1*selectedModels[14](x[2], *selectedParameters[14]) + \
-    b0*selectedModels[15](x[3], *selectedParameters[15])
+    return b0*selectedModels[12](x[0], *selectedParameters[12]) + \
+    b1*selectedModels[13](x[1], *selectedParameters[13]) + \
+    b2*selectedModels[14](x[2], *selectedParameters[14]) + \
+    b3*selectedModels[15](x[3], *selectedParameters[15])
 
-LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
-POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
-E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
-T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
+# Full Dataset identification 
+#LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
+#POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
+#E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
+#T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
 
-print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
-print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
-print(NRMSE(E, featureData, EneAggModel, E_parameters))
-print(NRMSE(T, featureData, ThrAggModel, T_parameters))
+# Show resulting NRMSE 
+#print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
+#print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
+#print(NRMSE(E, featureData, EneAggModel, E_parameters))
+#print(NRMSE(T, featureData, ThrAggModel, T_parameters))
 
+#print((LAT_parameters[0]*selectedParameters[0]))
+
+
+#----------------------------------- 10-Fold Cross Validation ------------------------------------
+# Dataset shuffle
+k_folds = 10
+shuffledData = np.array([WH, C, K, N, LAT, POW, E, T])
+shuffledData = shuffledData[:, np.random.permutation(shuffledData.shape[1])]
+
+# Dataset split in 10-folds
+foldSize = shuffledData.shape[1] / k_folds
+for i in range(k_folds):
+    # Split for train data
+    trainData = np.delete(shuffledData, np.arange(i*foldSize,i*foldSize+foldSize,dtype=int), 1)
+    # Split for validation data
+    validationData = shuffledData[:,np.arange(i*foldSize,i*foldSize+foldSize,dtype=int)]
+    # Identification over training Dataset
+    LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], maxfev=1000)
+    POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], maxfev=1000)
+    E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], maxfev=1000)
+    T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], maxfev=1000)
+    # Show resulting NRMSE 
+    print(NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters))
+    #print(NRMSE(trainData[5,:], trainData[:4,:], PowAggModel, POW_parameters))
+    #print(NRMSE(trainData[6,:], trainData[:4,:], EneAggModel, E_parameters))
+    #print(NRMSE(trainData[7,:], trainData[:4,:], ThrAggModel, T_parameters))
+    
 plt.show()
 #plt.close('all')
 
