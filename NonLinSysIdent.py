@@ -338,7 +338,7 @@ for kpis in kpis_variable:
             costs.append(cost)               
 
 # ----------------- Strong Regressor System Identification ----------------------------
-# Competittive selection by LSE with L2 regularization as Loss function
+# Competitive selection by LSE with L2 regularization as Loss function
 wr_ensembleCost = []
 wr_ensembleParameters = []
 selectedModels = []
@@ -354,7 +354,7 @@ for kpis in kpis_variable:
             wr_ensembleParameters.append(parameters[k])
             k += 1
         selectedModel = Models[np.argmin(wr_ensembleCost)]
-        selectedParameter = parameters[np.argmin(wr_ensembleCost)]
+        selectedParameter = wr_ensembleParameters[np.argmin(wr_ensembleCost)]
         selectedCost = wr_ensembleCost[np.argmin(wr_ensembleCost)]
         print(selectedModel.name +' model for ' + feature_symbol[j] + ' feature with Cost = %5.3f' % selectedCost + ' with Parameters: ', end = ' ')
         print(selectedParameter)
@@ -446,7 +446,7 @@ def ThrAggModel(x ,b3 ,b2, b1, b0):
 #print(NRMSE(E, featureData, EneAggModel, E_parameters))
 #print(NRMSE(T, featureData, ThrAggModel, T_parameters))
 
-#print((LAT_parameters[0]*selectedParameters[0]))
+#print(LAT_parameters[0]*selectedParameters[0])
 
 
 #----------------------------------- 10-Fold Cross Validation ------------------------------------
@@ -454,7 +454,12 @@ def ThrAggModel(x ,b3 ,b2, b1, b0):
 k_folds = 10
 shuffledData = np.array([WH, C, K, N, LAT, POW, E, T])
 shuffledData = shuffledData[:, np.random.permutation(shuffledData.shape[1])]
-
+parameterDistLAT = []
+parameterDistE = []
+avLAT_NMRSE = 0
+avPOW_NMRSE = 0
+avE_NMRSE = 0
+avT_NMRSE = 0
 # Dataset split in 10-folds
 foldSize = shuffledData.shape[1] / k_folds
 for i in range(k_folds):
@@ -467,11 +472,54 @@ for i in range(k_folds):
     POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], maxfev=1000)
     E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], maxfev=1000)
     T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], maxfev=1000)
-    # Show resulting NRMSE 
-    print(NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters))
-    #print(NRMSE(trainData[5,:], trainData[:4,:], PowAggModel, POW_parameters))
-    #print(NRMSE(trainData[6,:], trainData[:4,:], EneAggModel, E_parameters))
-    #print(NRMSE(trainData[7,:], trainData[:4,:], ThrAggModel, T_parameters))
+    # Compute resulting NRMSE on validation Dataset fold
+    avLAT_NMRSE += NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters)
+    avPOW_NMRSE += NRMSE(trainData[5,:], trainData[:4,:], PowAggModel, POW_parameters)
+    avE_NMRSE += NRMSE(trainData[6,:], trainData[:4,:], EneAggModel, E_parameters)
+    avT_NMRSE += NRMSE(trainData[7,:], trainData[:4,:], ThrAggModel, T_parameters)
+    # Store obtained distribution per fold iteration
+    parameterDistLAT.append(np.concatenate((LAT_parameters[0]*selectedParameters[0], \
+                            LAT_parameters[1]*selectedParameters[1], \
+                            LAT_parameters[2]*selectedParameters[2], \
+                            LAT_parameters[3]*selectedParameters[3])))
+    parameterDistE.append(np.concatenate((E_parameters[0]*selectedParameters[8], \
+                            E_parameters[1]*selectedParameters[9], \
+                            E_parameters[2]*selectedParameters[10], \
+                            E_parameters[3]*selectedParameters[11])))
+
+# Average NRMSE metric
+avLAT_NMRSE = avLAT_NMRSE / k_folds
+avPOW_NMRSE = avPOW_NMRSE / k_folds
+avE_NMRSE = avE_NMRSE / k_folds
+avT_NMRSE = avT_NMRSE / k_folds
+#print(avLAT_NMRSE)
+#print(avPOW_NMRSE)
+#print(avE_NMRSE)
+#print(avT_NMRSE)
+# Show parameter distribution after k-fold validation for box plotting    
+if args.validation_plot:
+    # KPI parameter array initialization
+    distLATarray = np.array(parameterDistLAT)
+    distEarray = np.array(parameterDistE)
+    # Normalize
+    distLATarray = (distLATarray - np.mean(distLATarray, axis=0)) / (np.amax(distLATarray, axis=0) - np.amin(distLATarray, axis=0))
+    distEarray = (distEarray - np.mean(distEarray, axis=0)) / (np.amax(distEarray, axis=0) - np.amin(distEarray, axis=0))
+    plt.figure()
+    plt.boxplot(distLATarray, 0, '')
+    plt.title('Parameter distribution for Latency model')
+    plt.xlabel('Parameters')
+    plt.xticks(np.arange(13), ('' , 'a11', 'a10', 'a9', 'a8','a7', 'a6', 'a5', 'a4', 'a3','a2', 'a1', 'a0'))
+    plt.grid()
+    plt.figure()
+    plt.boxplot(distEarray, 0, '')
+    plt.title('Parameter distribution for Energy model')
+    plt.xlabel('Parameters')
+    plt.xticks(np.arange(15), ('', 'a13', 'a12' , 'a11', 'a10', 'a9', 'a8','a7', 'a6', 'a5', 'a4', 'a3','a2', 'a1', 'a0'))
+    plt.grid()
+    #for i in range(distLATarray.shape[1]):
+        #plt.figure()
+        #plt.boxplot(np.transpose(distLATarray)[i])
+        
     
 plt.show()
 #plt.close('all')
