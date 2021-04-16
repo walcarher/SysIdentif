@@ -412,7 +412,7 @@ for sample in dataset:
 featureData = np.array([WH, C, K, N])
 
 # Strong regressor aggregation or combination for multi-feature modeling after selection
-# x: a vector of K samples containin multiple-variables per sample x = (WH, C, k, N) 
+# x: a vector of K samples containing multiple-variables per sample x = (WH, C, k, N) 
 # bj: parameters per model. Must be of the same size as x
 @Name('Latency Aggregation')
 def LatAggModel(x ,b3 ,b2, b1, b0):
@@ -443,20 +443,21 @@ def ThrAggModel(x ,b3 ,b2, b1, b0):
     b3*selectedModels[15](x[3], *selectedParameters[15])
 
 # Full Dataset identification 
-#LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
-#POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
-#E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
-#T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
+LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
+POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
+E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
+T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
 
 # Show resulting NRMSE 
-#print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
-#print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
-#print(NRMSE(E, featureData, EneAggModel, E_parameters))
-#print(NRMSE(T, featureData, ThrAggModel, T_parameters))
+print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
+print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
+print(NRMSE(E, featureData, EneAggModel, E_parameters))
+print(NRMSE(T, featureData, ThrAggModel, T_parameters))
 
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
+    print("Validating results with 10-Fold Cross-Validation...")
     # Number of folds
     k_folds = 10
     # Number of iterations
@@ -488,11 +489,11 @@ if args.validation_plot:
             E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], maxfev=1000)
             T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], maxfev=1000)
             # Compute resulting NRMSE on validation Dataset fold
-            distNMRSE.append(NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters))
+            distNMRSE.append(NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters))
             avLAT_NMRSE += NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters)
-            avPOW_NMRSE += NRMSE(trainData[5,:], trainData[:4,:], PowAggModel, POW_parameters)
-            avE_NMRSE += NRMSE(trainData[6,:], trainData[:4,:], EneAggModel, E_parameters)
-            avT_NMRSE += NRMSE(trainData[7,:], trainData[:4,:], ThrAggModel, T_parameters)
+            avPOW_NMRSE += NRMSE(validationData[5,:], validationData[:4,:], PowAggModel, POW_parameters)
+            avE_NMRSE += NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters)
+            avT_NMRSE += NRMSE(validationData[7,:], validationData[:4,:], ThrAggModel, T_parameters)
             # Store obtained distribution per fold iteration
             parameterDistLAT.append(np.concatenate((LAT_parameters[0]*selectedParameters[0], \
                                     LAT_parameters[1]*selectedParameters[1], \
