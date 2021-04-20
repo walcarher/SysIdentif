@@ -123,7 +123,7 @@ for WH_in in WH_in_list:
                 input = torch.rand(1, C_in, WH_in, WH_in, device = device)
                 convkxk_s1_net.conv1.weight.data.random_()
                 convkxk_s1_net.conv1.bias.data.random_()          
-                out = convkxk_s1_net(input, device = device)              
+                out = convkxk_s1_net(input)              
                 print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out))
                 start = time.time()
                 # Iterate over multiple tests
@@ -131,7 +131,7 @@ for WH_in in WH_in_list:
                     input = torch.rand(1, C_in, WH_in, WH_in, device = device)
                     convkxk_s1_net.conv1.weight.data.random_()
                     convkxk_s1_net.conv1.bias.data.random_()           
-                    out = convkxk_s1_net(input, device = device)
+                    out = convkxk_s1_net(input)
                     with open(cpuLoadFile, 'r') as cpuFile:
                         power += float(cpuFile.read())
                     iter += 1
