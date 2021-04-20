@@ -163,9 +163,9 @@ for WH_in in WH_in_list:
                 dataset.append([WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out, LAT, POW, E, T])
 
 # Save results
-file = open('datasetMultivariate.pkl', 'wb')
+file = open('datasetMultivariateGPU.pkl', 'wb')
 pickle.dump(dataset, file)
-print("Data saved in file datasetMultivariate.pkl")
+print("Data saved in file datasetMultivariateGPU.pkl")
 
 
 
