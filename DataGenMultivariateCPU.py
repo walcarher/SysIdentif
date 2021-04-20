@@ -45,12 +45,12 @@ for WH_in in WH_in_list:
                 def __init__(self):
                     super(Conv1x1_s1_Net, self).__init__()
                     # input channel, output channels, kernel size 1x1, stride 1-1, 0 padding
-                    self.conv1 = nn.Conv2d(C_in, C_out, 1, stride = 1, padding = 0, device = device)
+                    self.conv1 = nn.Conv2d(C_in, C_out, 1, stride = 1, padding = 0)
 
                 def forward(self, x):
                     # Maxpooling 2x2 and ReLu activation function
                     #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
-                    x = F.relu(self.conv1(x), device = device)
+                    x = F.relu(self.conv1(x))
                     #x = self.conv1(x)
                     return x
                         
@@ -59,12 +59,12 @@ for WH_in in WH_in_list:
                 def __init__(self):
                     super(Conv3x3_s1_Net, self).__init__()
                     # input channel, output channels, kernel size 3x3, stride 1-1, 0 padding
-                    self.conv1 = nn.Conv2d(C_in, C_out, 3, stride = 1, padding = 0, device = device)
+                    self.conv1 = nn.Conv2d(C_in, C_out, 3, stride = 1, padding = 0)
 
                 def forward(self, x):
                     # Maxpooling 2x2 and ReLu activation function
                     #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
-                    x = F.relu(self.conv1(x), device = device)
+                    x = F.relu(self.conv1(x))
                     #x = self.conv1(x)
                     return x
                         
@@ -73,12 +73,12 @@ for WH_in in WH_in_list:
                 def __init__(self):
                     super(Conv5x5_s1_Net, self).__init__()
                     # input channel, output channels, kernel size 7x7, stride 1-1, 0 padding
-                    self.conv1 = nn.Conv2d(C_in, C_out, 5, stride = 1, padding = 0, device = device)
+                    self.conv1 = nn.Conv2d(C_in, C_out, 5, stride = 1, padding = 0)
 
                 def forward(self, x):
                     # Maxpooling 2x2 and ReLu activation function
                     #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
-                    x = F.relu(self.conv1(x), device = device)
+                    x = F.relu(self.conv1(x))
                     #x = self.conv1(x)
                     return x
                         
@@ -87,12 +87,12 @@ for WH_in in WH_in_list:
                 def __init__(self):
                     super(Conv7x7_s1_Net, self).__init__()
                     # input channel, output channels, kernel size 7x7, stride 1-1, 0 padding
-                    self.conv1 = nn.Conv2d(C_in, C_out, 7, stride = 1, padding = 0, device = device)
+                    self.conv1 = nn.Conv2d(C_in, C_out, 7, stride = 1, padding = 0)
 
                 def forward(self, x):
                     # Maxpooling 2x2 and ReLu activation function
                     #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
-                    x = F.relu(self.conv1(x), device = device)
+                    x = F.relu(self.conv1(x))
                     #x = self.conv1(x)
                     return x
 
@@ -101,12 +101,12 @@ for WH_in in WH_in_list:
                 def __init__(self):
                     super(Conv11x11_s1_Net, self).__init__()
                     # input channel, output channels, kernel size 11x11, stride 1-1, 0 padding
-                    self.conv1 = nn.Conv2d(C_in, C_out, 11, stride = 1, padding = 0, device = device)
+                    self.conv1 = nn.Conv2d(C_in, C_out, 11, stride = 1, padding = 0)
 
                 def forward(self, x):
                     # Maxpooling 2x2 and ReLu activation function
                     #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
-                    x = F.relu(self.conv1(x), device = device)
+                    x = F.relu(self.conv1(x))
                     #x = self.conv1(x)
                     return x
 
