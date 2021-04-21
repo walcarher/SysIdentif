@@ -110,17 +110,28 @@ def autocorr(x):
     return corr   
 
 # ----------------- Weak Regressor System Identification ----------------------------
-
+# Max values of feature space
+k_max = 11
+N_max = 512
+WH_max = 100
+C_max = 512
 # Defining constant and variable inputs for Dataset subsampling for 3D visualization
-# Performance vs WH and C (filter size k and number of filters N are constant)
+# KPIs vs WH and C (filter size k and number of filters N are constant)
 k_const = 11
 N_const = 512
 WH_var, C_var, LAT_WHC, POW_WHC, E_WHC, T_WHC = [],[],[],[],[],[]
-
-# Performance vs k and N (Input tensor size WH_in and C_in are constant)
+# KPIs vs k and N (Input tensor size WH_in and C_in are constant)
 WH_const = 100
 C_const = 512
 k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
+# Ordered KPI names
+kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
+# with units
+kpi_units = ['ms', 'W', 'J', 'GB/s']
+# Ordered feature names
+feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
+# with 
+feature_symbol = ['HW', 'C', 'k', 'N']
 
 # Retrieving sample data from Dataset (sample = [WH, C, k, N, LAT, POW, E, T])
 for sample in dataset:
@@ -148,8 +159,8 @@ if args.data_plot:
     Z = np.array(LAT_WHC)
     ax1 = fig1.gca(projection='3d')
     ax1.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax1.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
-    ax1.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax1.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
+    ax1.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
     plt.title('Latency vs Input Tensor Size')
     ax1.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
@@ -164,8 +175,8 @@ if args.data_plot:
     Z = np.array(LAT_kN)
     ax2 = fig2.gca(projection='3d')
     ax2.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax2.tricontour(X, Y, Z, zdir='x', offset=11, cmap=cm.coolwarm)
-    ax2.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax2.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
+    ax2.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
     plt.title('Latency vs Kernel Tensor')
     ax2.set_xlabel('Kernel Size (k)')
     #ax.set_xlim(,)
@@ -181,8 +192,8 @@ if args.data_plot:
     Z = np.array(E_WHC)
     ax3 = fig3.gca(projection='3d')
     ax3.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax3.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
-    ax3.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax3.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
+    ax3.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
     plt.title('Energy vs Input Tensor Size')
     ax3.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
@@ -197,8 +208,8 @@ if args.data_plot:
     Z = np.array(E_kN)
     ax4 = fig4.gca(projection='3d')
     ax4.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax4.tricontour(X, Y, Z, zdir='x', offset=11, cmap=cm.coolwarm)
-    ax4.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax4.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
+    ax4.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
     plt.title('Energy vs Kernel Tensor')
     ax4.set_xlabel('Kernel Size (k)')
     #ax.set_xlim(,)
@@ -214,8 +225,8 @@ if args.data_plot:
     Z = np.array(POW_WHC)
     ax5 = fig5.gca(projection='3d')
     ax5.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax5.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
-    ax5.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax5.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
+    ax5.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
     plt.title('Power vs Input Tensor Size')
     ax5.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
@@ -230,8 +241,8 @@ if args.data_plot:
     Z = np.array(POW_kN)
     ax6 = fig6.gca(projection='3d')
     ax6.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax6.tricontour(X, Y, Z, zdir='x', offset=11, cmap=cm.coolwarm)
-    ax6.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax6.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
+    ax6.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
     plt.title('Power vs Kernel Tensor')
     ax6.set_xlabel('Kernel Size (k)')
     #ax.set_xlim(,)
@@ -247,8 +258,8 @@ if args.data_plot:
     Z = np.array(T_WHC)
     ax6 = fig6.gca(projection='3d')
     ax6.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax6.tricontour(X, Y, Z, zdir='x', offset=100, cmap=cm.coolwarm)
-    ax6.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax6.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
+    ax6.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
     plt.title('Throughput vs Input Tensor Size')
     ax6.set_xlabel('Width and Height (WH)')
     #ax.set_xlim(,)
@@ -263,8 +274,8 @@ if args.data_plot:
     Z = np.array(T_kN)
     ax7 = fig7.gca(projection='3d')
     ax7.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax7.tricontour(X, Y, Z, zdir='x', offset=11, cmap=cm.coolwarm)
-    ax7.tricontour(X, Y, Z, zdir='y', offset=512, cmap=cm.coolwarm)
+    ax7.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
+    ax7.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
     plt.title('Throughput vs Kernel Tensor')
     ax7.set_xlabel('Kernel Size (k)')
     #ax.set_xlim(,)
@@ -312,14 +323,6 @@ kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [
 features = [WH_var, C_var, k_var, N_var]
 # Previously defined models
 Models = [LinModel, QuadModel, LogModel, ExpModel, PolyModel]
-# Ordered KPI names
-kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
-# with units
-kpi_units = ['ms', 'W', 'J', 'GB/s']
-# Ordered feature names
-feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
-# with 
-feature_symbol = ['WH', 'C', 'k', 'N']
 # Obtained optimal parameters 
 parameters = []
 # Obtained RMSE
