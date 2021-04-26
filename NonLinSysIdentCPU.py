@@ -127,7 +127,7 @@ k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
 # Ordered KPI names
 kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
 # with units
-kpi_units = ['ms', 'W', 'J', 'GB/s']
+kpi_units = ['s', 'W', 'J', 'GB/s']
 # Ordered feature names
 feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
 # with 
@@ -138,14 +138,14 @@ for sample in dataset:
     if sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
         C_var.append(sample[1])
-        LAT_WHC.append(sample[4])
+        LAT_WHC.append(sample[4]/1000) # in seconds
         POW_WHC.append(sample[5])
         E_WHC.append(sample[6])
         T_WHC.append(sample[7])
     if sample[0] == WH_const and sample[1] == C_const:
         k_var.append(sample[2])
         N_var.append(sample[3])
-        LAT_kN.append(sample[4])
+        LAT_kN.append(sample[4]/1000) # in seconds
         POW_kN.append(sample[5])
         E_kN.append(sample[6])
         T_kN.append(sample[7])       
@@ -294,25 +294,25 @@ N_var, LAT_N, POW_N, E_N, T_N = [],[],[],[],[]
 for sample in dataset:
     if  sample[1] == C_const and sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
-        LAT_WH.append(sample[4])
+        LAT_WH.append(sample[4]/1000)
         POW_WH.append(sample[5])
         E_WH.append(sample[6])
         T_WH.append(sample[7])
     if sample[0] == WH_const and sample[2] == k_const and sample[3] == N_const:
         C_var.append(sample[1])
-        LAT_C.append(sample[4])
+        LAT_C.append(sample[4]/1000)
         POW_C.append(sample[5])
         E_C.append(sample[6])
         T_C.append(sample[7])
     if sample[0] == WH_const and sample[1] == C_const and sample[3] == N_const:
         k_var.append(sample[2])
-        LAT_k.append(sample[4])
+        LAT_k.append(sample[4]/1000)
         POW_k.append(sample[5])
         E_k.append(sample[6])
         T_k.append(sample[7])
     if sample[0] == WH_const and sample[1] == C_const and sample[2] == k_const:
         N_var.append(sample[3])
-        LAT_N.append(sample[4])
+        LAT_N.append(sample[4]/1000)
         POW_N.append(sample[5])
         E_N.append(sample[6])
         T_N.append(sample[7]) 
@@ -406,7 +406,7 @@ for sample in dataset:
     C.append(sample[1])
     K.append(sample[2])
     N.append(sample[3])
-    LAT.append(sample[4])
+    LAT.append(sample[4]/1000)
     POW.append(sample[5])
     E.append(sample[6])
     T.append(sample[7])

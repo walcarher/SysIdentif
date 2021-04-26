@@ -129,7 +129,7 @@ ALM_kN, ALUT_kN, LAB_kN, M20K_kN = [],[],[],[]
 # Ordered KPI names
 kpi_names = ['Latency', 'Power', 'Energy', 'Throughput', 'ALMs', 'ALUTs', 'LABs', 'M20Ks']
 # with units
-kpi_units = ['ms', 'W', 'J', 'GB/s', '', '', '', '']
+kpi_units = ['ms', 'W', r'$\mu$J', 'GB/s', '', '', '', '']
 # Ordered feature names
 feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
 # with 
@@ -142,7 +142,7 @@ for sample in dataset:
         C_var.append(sample[1])
         LAT_WHC.append(sample[4])
         POW_WHC.append(sample[5])
-        E_WHC.append(sample[6])
+        E_WHC.append(sample[6]*1000000) # in microJoules
         T_WHC.append(sample[7])
         ALM_WHC.append(sample[8])
         ALUT_WHC.append(sample[9])
@@ -153,7 +153,7 @@ for sample in dataset:
         N_var.append(sample[3])
         LAT_kN.append(sample[4])
         POW_kN.append(sample[5])
-        E_kN.append(sample[6])
+        E_kN.append(sample[6]*1000000) # in microJoules
         T_kN.append(sample[7])
         ALM_kN.append(sample[8])
         ALUT_kN.append(sample[9])
@@ -211,7 +211,7 @@ if args.data_plot:
     #ax.set_xlim(,)
     ax3.set_ylabel('Number of Channels (C)')
     #ax.set_ylim(,)
-    ax3.set_zlabel('Energy (J)')
+    ax3.set_zlabel('Energy'+'('+r'$\mu$J'+')')
     #ax.set_zlim(,)
     # Energy vs Filter size and depth (E vs k and N) with input tensor size constant (WH and C)
     fig4 = plt.figure()
@@ -227,7 +227,7 @@ if args.data_plot:
     #ax.set_xlim(,)
     ax4.set_ylabel('Number of Filters (N)')
     #ax.set_ylim(,)
-    ax4.set_zlabel('Energy (J)')
+    ax4.set_zlabel('Energy'+'('+r'$\mu$J'+')')
     #ax.set_zlim(,)
 
     # Power vs Input tensor size (P vs WH and C) with kernel size and depth constant (k and N)
