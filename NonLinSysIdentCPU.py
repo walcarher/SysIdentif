@@ -27,12 +27,13 @@ parser.add_argument("-v", "--validation_plot", type = int, choices=[0, 1],
 		 default = 0)
 args = parser.parse_args()
 
-# Load previously generated dataset from DataGenMultivariate.py
+# Load previously generated dataset from DataGenMultivariateCPU.py
 file = open('datasetMultivariateCPU.pkl', 'rb')
 if not file:
     sys.exit("No datasetMultivariateCPU.pkl file was found")
 else:
     dataset = pickle.load(file)
+    print(dataset)
 if not dataset:
     sys.exit("Data loaded was empty from datasetMultivariateCPU.pkl file")
 
@@ -166,7 +167,7 @@ if args.data_plot:
     #ax.set_xlim(,)
     ax1.set_ylabel('Number of Channels (C)')
     #ax.set_ylim(,)
-    ax1.set_zlabel('Latency (ms)')
+    ax1.set_zlabel('Latency (s)')
     #ax.set_zlim(,)
     # Latency vs Filter size and depth (LAT vs k and N) with input tensor size constant (WH and C)
     fig2 = plt.figure()
@@ -182,7 +183,7 @@ if args.data_plot:
     #ax.set_xlim(,)
     ax2.set_ylabel('Number of Filters (N)')
     #ax.set_ylim(,)
-    ax2.set_zlabel('Latency (ms)')
+    ax2.set_zlabel('Latency (s)')
     #ax.set_zlim(,)
 
     # Energy vs Input tensor size (E vs WH and C) with kernel size and depth constant (k and N)

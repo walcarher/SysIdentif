@@ -66,6 +66,10 @@ for feature_sample, kpi_sample in zip(dataset, kpi_dataset):
     # Concatenate feature and KPI datset lists
     full_dataset.append(feature_sample + kpi_sample)
 
+# Full Dataset as Numpy Array for sorting
+datasetArray = np.array(full_dataset)
+datasetArray.view('i8,i8,i8,i8').sort(order=['f0','f1','f3','f2'], axis=0)
+full_dataset = datasetArray.tolist()
 # Save results
 file = open('datasetMultivariateFPGA.pkl', 'wb')
 pickle.dump(full_dataset, file)
