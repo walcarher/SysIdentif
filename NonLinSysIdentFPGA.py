@@ -478,14 +478,14 @@ if args.validation_plot:
             avE_NMRSE += NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters)
             avT_NMRSE += NRMSE(validationData[7,:], validationData[:4,:], ThrAggModel, T_parameters)
             # Store obtained distribution per fold iteration
-            parameterDistLAT.append(np.concatenate((LAT_parameters[0]*selectedParameters[0], \
-                                    LAT_parameters[1]*selectedParameters[1], \
-                                    LAT_parameters[2]*selectedParameters[2], \
-                                    LAT_parameters[3]*selectedParameters[3])))
-            parameterDistE.append(np.concatenate((E_parameters[0]*selectedParameters[8], \
-                                    E_parameters[1]*selectedParameters[9], \
-                                    E_parameters[2]*selectedParameters[10], \
-                                    E_parameters[3]*selectedParameters[11])))
+            parameterDistLAT.append(np.concatenate((LAT_parameters[3]*selectedParameters[0], \
+                                    LAT_parameters[2]*selectedParameters[1], \
+                                    LAT_parameters[1]*selectedParameters[2], \
+                                    LAT_parameters[0]*selectedParameters[3])))
+            parameterDistE.append(np.concatenate((E_parameters[3]*selectedParameters[8], \
+                                    E_parameters[2]*selectedParameters[9], \
+                                    E_parameters[1]*selectedParameters[10], \
+                                    E_parameters[0]*selectedParameters[11])))
     # Average NRMSE metric
     k_folds = k_folds*iters
     avLAT_NMRSE = avLAT_NMRSE / k_folds
@@ -497,8 +497,8 @@ if args.validation_plot:
     distLATarray = np.array(parameterDistLAT)
     distEarray = np.array(parameterDistE)
     # Normalise
-    distLATarray = (distLATarray - np.mean(distLATarray, axis=0)) / (np.amax(distLATarray, axis=0) - np.amin(distLATarray, axis=0))
-    distEarray = (distEarray - np.mean(distEarray, axis=0))/ (np.amax(distEarray, axis=0) - np.amin(distEarray, axis=0))
+    normdistLATarray = (distLATarray - np.mean(distLATarray, axis=0)) / (np.amax(distLATarray, axis=0) - np.amin(distLATarray, axis=0))
+    normdistEarray = (distEarray - np.mean(distEarray, axis=0))/ (np.amax(distEarray, axis=0) - np.amin(distEarray, axis=0))
     # Standarise
     #distLATarray = (distLATarray - np.mean(distLATarray, axis=0)) / np.std(distLATarray, axis=0)
     #distEarray = (distEarray - np.mean(distEarray, axis=0)) / np.std(distEarray, axis=0)
@@ -561,7 +561,7 @@ if args.validation_plot:
     # Show parameter distribution after k-fold validation for box plotting    
 
     plt.figure()
-    plt.violinplot(distLATarray,showmeans=False,showmedians=True,showextrema=True)
+    plt.violinplot(normdistLATarray,showmeans=False,showmedians=True,showextrema=True)
     plt.title('Parameter distribution for Latency model')
     plt.xlabel('Parameters')
     plt.figure()
@@ -571,7 +571,7 @@ if args.validation_plot:
     plt.xticks(np.arange(13), ('' , 'a11', 'a10', 'a9', 'a8','a7', 'a6', 'a5', 'a4', 'a3','a2', 'a1', 'a0'))
     plt.grid()
     plt.figure()
-    plt.violinplot(distEarray,showmeans=False,showmedians=True,showextrema=True)
+    plt.violinplot(normdistEarray,showmeans=False,showmedians=True,showextrema=True)
     plt.title('Parameter distribution for Energy model')
     plt.xlabel('Parameters')
     plt.figure()
