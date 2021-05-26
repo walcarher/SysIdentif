@@ -418,32 +418,32 @@ featureData = np.array([WH, C, K, N])
 # x: a vector of K samples containing multiple-variables per sample x = (WH, C, k, N) 
 # bj: parameters per model. Must be of the same size as x
 @Name('Latency Aggregation')
-def LatAggModel(x ,b3 ,b2, b1, b0):
+def LatAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[0](x[0], *selectedParameters[0]) + \
     b1*selectedModels[1](x[1], *selectedParameters[1]) + \
     b2*selectedModels[2](x[2], *selectedParameters[2]) + \
-    b3*selectedModels[3](x[3], *selectedParameters[3])
+    b3*selectedModels[3](x[3], *selectedParameters[3]) + b4
     
 @Name('Power Aggregation')
-def PowAggModel(x ,b3 ,b2, b1, b0):
+def PowAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[4](x[0], *selectedParameters[4]) + \
     b1*selectedModels[5](x[1], *selectedParameters[5]) + \
     b2*selectedModels[6](x[2], *selectedParameters[6]) + \
-    b3*selectedModels[7](x[3], *selectedParameters[7])
+    b3*selectedModels[7](x[3], *selectedParameters[7]) + b4
     
 @Name('Energy Aggregation')
-def EneAggModel(x ,b3 ,b2, b1, b0):
+def EneAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[8](x[0], *selectedParameters[8]) + \
     b1*selectedModels[9](x[1], *selectedParameters[9]) + \
     b2*selectedModels[10](x[2], *selectedParameters[10]) + \
-    b3*selectedModels[11](x[3], *selectedParameters[11])
+    b3*selectedModels[11](x[3], *selectedParameters[11]) + b4
     
 @Name('Throughput Aggregation')
-def ThrAggModel(x ,b3 ,b2, b1, b0):
+def ThrAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[12](x[0], *selectedParameters[12]) + \
     b1*selectedModels[13](x[1], *selectedParameters[13]) + \
     b2*selectedModels[14](x[2], *selectedParameters[14]) + \
-    b3*selectedModels[15](x[3], *selectedParameters[15])
+    b3*selectedModels[15](x[3], *selectedParameters[15]) + b4
 
 # Full Dataset identification 
 LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
@@ -465,6 +465,15 @@ print('Power NRMSE: ' + str(NRMSE(POW, featureData, PowAggModel, POW_parameters)
 print('Energy NRMSE: ' + str(NRMSE(E, featureData, EneAggModel, E_parameters)))
 print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters)))
 
+# Save results for test
+parameterPOW = np.concatenate((POW_parameters[0]*selectedParameters[4], \
+                POW_parameters[1]*selectedParameters[5], \
+                POW_parameters[2]*selectedParameters[6], \
+                POW_parameters[3]*selectedParameters[7], \
+                [POW_parameters[4]]))
+                
+file = open('parametersGPU.pkl', 'wb')
+pickle.dump(parameterPOW, file)
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
@@ -506,14 +515,14 @@ if args.validation_plot:
             avE_NMRSE += NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters)
             avT_NMRSE += NRMSE(validationData[7,:], validationData[:4,:], ThrAggModel, T_parameters)
             # Store obtained distribution per fold iteration
-            parameterDistLAT.append(np.concatenate((LAT_parameters[3]*selectedParameters[0], \
-                                    LAT_parameters[2]*selectedParameters[1], \
-                                    LAT_parameters[1]*selectedParameters[2], \
-                                    LAT_parameters[0]*selectedParameters[3])))                      
-            parameterDistE.append(np.concatenate((E_parameters[3]*selectedParameters[8], \
-                                    E_parameters[2]*selectedParameters[9], \
-                                    E_parameters[1]*selectedParameters[10], \
-                                    E_parameters[0]*selectedParameters[11])))
+            parameterDistLAT.append(np.concatenate((LAT_parameters[0]*selectedParameters[0], \
+                                    LAT_parameters[1]*selectedParameters[1], \
+                                    LAT_parameters[2]*selectedParameters[2], \
+                                    LAT_parameters[3]*selectedParameters[3])))                                   
+            parameterDistE.append(np.concatenate((E_parameters[0]*selectedParameters[8], \
+                                    E_parameters[1]*selectedParameters[9], \
+                                    E_parameters[2]*selectedParameters[10], \
+                                    E_parameters[3]*selectedParameters[11])))
     # Average NRMSE metric
     k_folds = k_folds*iters
     avLAT_NMRSE = avLAT_NMRSE / k_folds
