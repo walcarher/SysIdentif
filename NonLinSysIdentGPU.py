@@ -451,11 +451,19 @@ POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev
 E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
 T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
 
+# Print Strong regressor parameters
+print('Strong regressor parameters:')
+print('Latency parameters: ' + np.array2string(LAT_parameters))
+print('Power parameters: ' + np.array2string(POW_parameters))
+print('Energy parameters: ' + np.array2string(E_parameters))
+print('Throughput parameters: ' + np.array2string(T_parameters))
+
 # Show resulting NRMSE 
-print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
-print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
-print(NRMSE(E, featureData, EneAggModel, E_parameters))
-print(NRMSE(T, featureData, ThrAggModel, T_parameters))
+print('Precision metrics:')
+print('Latency NRMSE: ' + str(NRMSE(LAT, featureData, LatAggModel, LAT_parameters)))
+print('Power NRMSE: ' + str(NRMSE(POW, featureData, PowAggModel, POW_parameters)))
+print('Energy NRMSE: ' + str(NRMSE(E, featureData, EneAggModel, E_parameters)))
+print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters)))
 
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------

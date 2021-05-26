@@ -427,16 +427,28 @@ ALUT_parameters, ALUT_covariance = curve_fit(ALUTAggModel, featureData, ALUT, ma
 LAB_parameters, LAB_covariance = curve_fit(LABAggModel, featureData, LAB, maxfev=1000)
 M20K_parameters, M20K_covariance = curve_fit(M20KAggModel, featureData, M20K, maxfev=1000)
 
-# Show resulting NRMSE 
-print(NRMSE(LAT, featureData, LatAggModel, LAT_parameters))
-print(NRMSE(POW, featureData, PowAggModel, POW_parameters))
-print(NRMSE(E, featureData, EneAggModel, E_parameters))
-print(NRMSE(T, featureData, ThrAggModel, T_parameters))
-print(NRMSE(ALM, featureData, ALMAggModel, ALM_parameters))
-print(NRMSE(ALUT, featureData, ALUTAggModel, ALUT_parameters))
-print(NRMSE(LAB, featureData, LABAggModel, LAB_parameters))
-print(NRMSE(M20K, featureData, M20KAggModel, M20K_parameters))
+# Print Strong regressor parameters
+print('Strong regressor parameters:')
+print('Latency parameters: ' + np.array2string(LAT_parameters))
+print('Power parameters: ' + np.array2string(POW_parameters))
+print('Energy parameters: ' + np.array2string(E_parameters))
+print('Throughput parameters: ' + np.array2string(T_parameters))
+print('ALM parameters: ' + np.array2string(ALM_parameters))
+print('ALUT parameters: ' + np.array2string(ALUT_parameters))
+print('LAB parameters: ' + np.array2string(LAB_parameters))
+print('M20K parameters: ' + np.array2string(M20K_parameters))
 
+# Show resulting NRMSE 
+# Show resulting NRMSE 
+print('Precision metrics:')
+print('Latency NRMSE: ' + str(NRMSE(LAT, featureData, LatAggModel, LAT_parameters)))
+print('Power NRMSE: ' + str(NRMSE(POW, featureData, PowAggModel, POW_parameters)))
+print('Energy NRMSE: ' + str(NRMSE(E, featureData, EneAggModel, E_parameters)))
+print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters)))
+print('ALM NRMSE: ' + str(NRMSE(ALM, featureData, ALMAggModel, ALM_parameters)))
+print('ALUT NRMSE: ' + str(NRMSE(ALUT, featureData, ALUTAggModel, ALUT_parameters)))
+print('LAB NRMSE: ' + str(NRMSE(LAB, featureData, LABAggModel, LAB_parameters)))
+print('M20K NRMSE: ' + str(NRMSE(M20K, featureData, M20KAggModel, M20K_parameters)))
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
