@@ -54,172 +54,171 @@ powerEst = []
 #for num_convs in iter_range(start_num_convs, max_num_convs, step_size_convs):
 for num_convs in num_conv_list:
 
-	print("Number of convolutions: %d" % num_convs)
+    print("Number of convolutions: %d" % num_convs)
 
-	class Conv1x1_Net(nn.Module):
+    class Conv1x1_Net(nn.Module):
 
-		def __init__(self):
-			super(Conv1x1_Net,self).__init__()
-			#1 batch size, n conv output, kernel size 1x1, stride 1-1
-			self.conv1 = nn.Conv2d(1, num_convs, 1).cuda()
+        def __init__(self):
+            super(Conv1x1_Net,self).__init__()
+            #1 batch size, n conv output, kernel size 1x1, stride 1-1
+            self.conv1 = nn.Conv2d(1, num_convs, 1).cuda()
 
-		def forward(self, x):
-			# Maxpooling 2x2 and ReLu activation function
-			#x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-			x = self.conv1(x).cuda()
-			return x
+        def forward(self, x):
+            # Maxpooling 2x2 and ReLu activation function
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
+            x = self.conv1(x).cuda()
+            return x
 
-	class Conv3x3_Net(nn.Module):
+    class Conv3x3_Net(nn.Module):
 
-		def __init__(self):
-			super(Conv3x3_Net,self).__init__()
-			#1 batch size, n conv output, kernel size 3x3, stride 1-1
-			self.conv1 = nn.Conv2d(1, num_convs, 3).cuda()
+        def __init__(self):
+            super(Conv3x3_Net,self).__init__()
+            #1 batch size, n conv output, kernel size 3x3, stride 1-1
+            self.conv1 = nn.Conv2d(1, num_convs, 3).cuda()
 
-		def forward(self, x):
-			# Maxpooling 2x2 and ReLu activation function
-			#x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-			x = self.conv1(x).cuda()			
-			return x
+        def forward(self, x):
+            # Maxpooling 2x2 and ReLu activation function
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
+            x = self.conv1(x).cuda()			
+            return x
 
-	class Conv5x5_Net(nn.Module):
+    class Conv5x5_Net(nn.Module):
 
-		def __init__(self):
-			super(Conv5x5_Net,self).__init__()
-			#1 batch size, n conv output, kernel size 5x5, stride 1-1
-			self.conv1 = nn.Conv2d(1, num_convs, 5).cuda()
+        def __init__(self):
+            super(Conv5x5_Net,self).__init__()
+            #1 batch size, n conv output, kernel size 5x5, stride 1-1
+            self.conv1 = nn.Conv2d(1, num_convs, 5).cuda()
 
-		def forward(self, x):
-			# Maxpooling 2x2 and ReLu activation function
-			#x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-			x = self.conv1(x).cuda()			
-			return x
+        def forward(self, x):
+            # Maxpooling 2x2 and ReLu activation function
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
+            x = self.conv1(x).cuda()			
+            return x
 
-	class Conv7x7_Net(nn.Module):
+    class Conv7x7_Net(nn.Module):
 
-		def __init__(self):
-			super(Conv7x7_Net,self).__init__()
-			#1 batch size, n conv output, kernel size 7x7, stride 1-1
-			self.conv1 = nn.Conv2d(1, num_convs, 7).cuda()
+        def __init__(self):
+            super(Conv7x7_Net,self).__init__()
+            #1 batch size, n conv output, kernel size 7x7, stride 1-1
+            self.conv1 = nn.Conv2d(1, num_convs, 7).cuda()
 
-		def forward(self, x):
-			# Maxpooling 2x2 and ReLu activation function
-			#x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-			x = self.conv1(x).cuda()			
-			return x
+        def forward(self, x):
+            # Maxpooling 2x2 and ReLu activation function
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
+            x = self.conv1(x).cuda()			
+            return x
 
-	class Conv11x11_Net(nn.Module):
+    class Conv11x11_Net(nn.Module):
 
-		def __init__(self):
-			super(Conv11x11_Net,self).__init__()
-			#1 batch size, n conv output, kernel size 11x11, stride 1-1
-			self.conv1 = nn.Conv2d(1, num_convs, 11).cuda()
+        def __init__(self):
+            super(Conv11x11_Net,self).__init__()
+            #1 batch size, n conv output, kernel size 11x11, stride 1-1
+            self.conv1 = nn.Conv2d(1, num_convs, 11).cuda()
 
-		def forward(self, x):
-			# Maxpooling 2x2 and ReLu activation function
-			#x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-			x = self.conv1(x).cuda()			
-			return x
+        def forward(self, x):
+            # Maxpooling 2x2 and ReLu activation function
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
+            x = self.conv1(x).cuda()			
+        return x
 
-	# Convolution layer model
-	conv1x1_net = Conv1x1_Net()
-	print(conv1x1_net)
+    # Convolution layer model
+    conv1x1_net = Conv1x1_Net()print(conv1x1_net)
     time.sleep(time_delay)
 
-	print("Now running ...")
-	i = 0
-	csv_file.write(str(num_convs)+',')
-	csv_file.write('Conv1x1'+',')
-	csv_file.write(str(time.time())+',')
-	while(i < n_iter):
-		out = conv1x1_net(input).cuda()
+    print("Now running ...")
+    i = 0
+    csv_file.write(str(num_convs)+',')
+    csv_file.write('Conv1x1'+',')
+    csv_file.write(str(time.time())+',')
+    while(i < n_iter):
+        out = conv1x1_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
             power.append(float(gpuFile.read()))
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,1,num_convs))
-		i += 1
-	csv_file.write(str(time.time())+',')
-	csv_file.write('\n')
+        i += 1
+    csv_file.write(str(time.time())+',')
+    csv_file.write('\n')
 
-	# Convolution layer model
-	conv3x3_net = Conv3x3_Net()
-	print(conv3x3_net)
-	
-	time.sleep(time_delay)
-	print("Now running ...")
-	i = 0
-	csv_file.write(str(num_convs)+',')
-	csv_file.write('Conv3x3'+',')
-	csv_file.write(str(time.time())+',')
-	while(i < n_iter):
-		out = conv3x3_net(input).cuda()
+    # Convolution layer model
+    conv3x3_net = Conv3x3_Net()
+    print(conv3x3_net)
+
+    time.sleep(time_delay)
+    print("Now running ...")
+    i = 0
+    csv_file.write(str(num_convs)+',')
+    csv_file.write('Conv3x3'+',')
+    csv_file.write(str(time.time())+',')
+    while(i < n_iter):
+        out = conv3x3_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
             power.append(float(gpuFile.read()))
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,3,num_convs))
-		i += 1
-	csv_file.write(str(time.time())+',')
-	csv_file.write('\n')
+        i += 1
+    csv_file.write(str(time.time())+',')
+    csv_file.write('\n')
 
-	# Convolution layer model
-	conv5x5_net = Conv5x5_Net()
-	print(conv5x5_net)
+    # Convolution layer model
+    conv5x5_net = Conv5x5_Net()
+    print(conv5x5_net)
 
-	time.sleep(time_delay)
-	print("Now running ...")
-	i = 0
-	csv_file.write(str(num_convs)+',')
-	csv_file.write('Conv5x5'+',')
-	csv_file.write(str(time.time())+',')
-	while(i < n_iter):
-		out = conv5x5_net(input).cuda()
+    time.sleep(time_delay)
+    print("Now running ...")
+    i = 0
+    csv_file.write(str(num_convs)+',')
+    csv_file.write('Conv5x5'+',')
+    csv_file.write(str(time.time())+',')
+    while(i < n_iter):
+        out = conv5x5_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
             power.append(float(gpuFile.read()))
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,5,num_convs))
-		i += 1
-	csv_file.write(str(time.time())+',')
-	csv_file.write('\n')
+        i += 1
+    csv_file.write(str(time.time())+',')
+    csv_file.write('\n')
 
-	# Convolution layer model
-	conv7x7_net = Conv7x7_Net()
-	print(conv7x7_net)
+    # Convolution layer model
+    conv7x7_net = Conv7x7_Net()
+    print(conv7x7_net)
 
-	time.sleep(time_delay)
-	print("Now running ...")
-	i = 0
-	csv_file.write(str(num_convs)+',')
-	csv_file.write('Conv7x7'+',')
-	csv_file.write(str(time.time())+',')
-	while(i < n_iter):
-		out = conv7x7_net(input).cuda()
+    time.sleep(time_delay)
+    print("Now running ...")
+    i = 0
+    csv_file.write(str(num_convs)+',')
+    csv_file.write('Conv7x7'+',')
+    csv_file.write(str(time.time())+',')
+    while(i < n_iter):
+        out = conv7x7_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
             power.append(float(gpuFile.read()))
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,7,num_convs))
-		i += 1
-	csv_file.write(str(time.time())+',')
-	csv_file.write('\n')
+        i += 1
+    csv_file.write(str(time.time())+',')
+    csv_file.write('\n')
 
-	# Convolution layer model
-	conv11x11_net = Conv11x11_Net()
-	print(conv11x11_net)
+    # Convolution layer model
+    conv11x11_net = Conv11x11_Net()
+    print(conv11x11_net)
 
-	time.sleep(time_delay)
-	print("Now running ...")
-	i = 0
-	csv_file.write(str(num_convs)+',')
-	csv_file.write('Conv11x11'+',')
-	csv_file.write(str(time.time())+',')
-	while(i < n_iter):
-		out = conv11x11_net(input).cuda()
+    time.sleep(time_delay)
+    print("Now running ...")
+    i = 0
+    csv_file.write(str(num_convs)+',')
+    csv_file.write('Conv11x11'+',')
+    csv_file.write(str(time.time())+',')
+    while(i < n_iter):
+        out = conv11x11_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
             power.append(float(gpuFile.read()))
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,11,num_convs))
-		i += 1
-	csv_file.write(str(time.time())+',')
-	csv_file.write('\n')
+        i += 1
+    csv_file.write(str(time.time())+',')
+    csv_file.write('\n')
 
 print("Test Done")
 
