@@ -26,7 +26,7 @@ def PowerEst(HW, C, k, N):
     return parameters[0]*(HW**3)+parameters[1]*(HW**2)+parameters[2]*(HW)+parameters[3]+parameters[4]*np.log(C)+parameters[5] + \
     parameters[6]*(k**2)+parameters[7]*(k)+parameters[8]+parameters[9]*np.log(N)+parameters[10]+parameters[11]
     
-input_tensor = 64 # input image/tensor size i.e. 224x224 for ImageNet
+input_tensor = 16 # input image/tensor size i.e. 224x224 for ImageNet
 input_channel = 3
 #start_num_convs = 100 # starting number of filters or depth of the output tensor
 #max_num_convs = 3000 # max number of filters or depth of the output tensor
@@ -230,7 +230,7 @@ print("Test Done")
 #N = np.concatenate((np.full_like(k_s, 100),np.full_like(k_s, 200),np.full_like(k_s, 300),np.full_like(k_s, 400),np.full_like(k_s, 500)),axis=1)
 
 plt.figure()
-x = np.linspace(1, len(power), len(N.size))
+x = np.linspace(1, len(power), len(power))
 plt.plot(x,np.asarray(power))
 plt.plot(x,np.asarray(powerEst))
 plt.grid()
