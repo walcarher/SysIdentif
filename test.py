@@ -61,7 +61,7 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv1x1_Net,self).__init__()
             #1 batch size, n conv output, kernel size 1x1, stride 1-1
-            self.conv1 = nn.Conv2d(1, num_convs, 1).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 1).cuda()
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
@@ -74,7 +74,7 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv3x3_Net,self).__init__()
             #1 batch size, n conv output, kernel size 3x3, stride 1-1
-            self.conv1 = nn.Conv2d(1, num_convs, 3).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 3).cuda()
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
@@ -87,7 +87,7 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv5x5_Net,self).__init__()
             #1 batch size, n conv output, kernel size 5x5, stride 1-1
-            self.conv1 = nn.Conv2d(1, num_convs, 5).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 5).cuda()
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
@@ -100,7 +100,7 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv7x7_Net,self).__init__()
             #1 batch size, n conv output, kernel size 7x7, stride 1-1
-            self.conv1 = nn.Conv2d(1, num_convs, 7).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 7).cuda()
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
@@ -113,7 +113,7 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv11x11_Net,self).__init__()
             #1 batch size, n conv output, kernel size 11x11, stride 1-1
-            self.conv1 = nn.Conv2d(1, num_convs, 11).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 11).cuda()
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
