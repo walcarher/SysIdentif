@@ -119,7 +119,7 @@ for num_convs in num_conv_list:
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
             x = self.conv1(x).cuda()			
-        return x
+            return x
 
     # Convolution layer model
     conv1x1_net = Conv1x1_Net()
