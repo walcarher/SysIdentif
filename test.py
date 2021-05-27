@@ -37,7 +37,7 @@ n_iter = 5000  # Number of iterations on a single convolution run
 time_delay = 0.2 # Pause between running tests
 
 # Writing results to this file
-csv_file = open('GPU_time.csv', "wb")
+#csv_file = open('GPU_time.csv', "wb")
 
 # Random input tensor or image with 1 batch, 1 channel and size 
 # input_tensorxinput_tensor
@@ -128,9 +128,9 @@ for num_convs in num_conv_list:
 
     print("Now running ...")
     i = 0
-    csv_file.write(str(num_convs)+',')
-    csv_file.write('Conv1x1'+',')
-    csv_file.write(str(time.time())+',')
+    #csv_file.write(str(num_convs)+',')
+    #csv_file.write('Conv1x1'+',')
+    #csv_file.write(str(time.time())+',')
     while(i < n_iter):
         out = conv1x1_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
@@ -138,8 +138,8 @@ for num_convs in num_conv_list:
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,1,num_convs))
         i += 1
-    csv_file.write(str(time.time())+',')
-    csv_file.write('\n')
+    #csv_file.write(str(time.time())+',')
+    #csv_file.write('\n')
 
     # Convolution layer model
     conv3x3_net = Conv3x3_Net()
@@ -148,9 +148,9 @@ for num_convs in num_conv_list:
     time.sleep(time_delay)
     print("Now running ...")
     i = 0
-    csv_file.write(str(num_convs)+',')
-    csv_file.write('Conv3x3'+',')
-    csv_file.write(str(time.time())+',')
+    #csv_file.write(str(num_convs)+',')
+    #csv_file.write('Conv3x3'+',')
+    #csv_file.write(str(time.time())+',')
     while(i < n_iter):
         out = conv3x3_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
@@ -158,8 +158,8 @@ for num_convs in num_conv_list:
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,3,num_convs))
         i += 1
-    csv_file.write(str(time.time())+',')
-    csv_file.write('\n')
+    #csv_file.write(str(time.time())+',')
+    #csv_file.write('\n')
 
     # Convolution layer model
     conv5x5_net = Conv5x5_Net()
@@ -168,9 +168,9 @@ for num_convs in num_conv_list:
     time.sleep(time_delay)
     print("Now running ...")
     i = 0
-    csv_file.write(str(num_convs)+',')
-    csv_file.write('Conv5x5'+',')
-    csv_file.write(str(time.time())+',')
+    #csv_file.write(str(num_convs)+',')
+    #csv_file.write('Conv5x5'+',')
+    #csv_file.write(str(time.time())+',')
     while(i < n_iter):
         out = conv5x5_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
@@ -178,8 +178,8 @@ for num_convs in num_conv_list:
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,5,num_convs))
         i += 1
-    csv_file.write(str(time.time())+',')
-    csv_file.write('\n')
+    #csv_file.write(str(time.time())+',')
+    #csv_file.write('\n')
 
     # Convolution layer model
     conv7x7_net = Conv7x7_Net()
@@ -188,9 +188,9 @@ for num_convs in num_conv_list:
     time.sleep(time_delay)
     print("Now running ...")
     i = 0
-    csv_file.write(str(num_convs)+',')
-    csv_file.write('Conv7x7'+',')
-    csv_file.write(str(time.time())+',')
+    #csv_file.write(str(num_convs)+',')
+    #csv_file.write('Conv7x7'+',')
+    #csv_file.write(str(time.time())+',')
     while(i < n_iter):
         out = conv7x7_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
@@ -198,8 +198,8 @@ for num_convs in num_conv_list:
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,7,num_convs))
         i += 1
-    csv_file.write(str(time.time())+',')
-    csv_file.write('\n')
+    #csv_file.write(str(time.time())+',')
+    #csv_file.write('\n')
 
     # Convolution layer model
     conv11x11_net = Conv11x11_Net()
@@ -208,9 +208,9 @@ for num_convs in num_conv_list:
     time.sleep(time_delay)
     print("Now running ...")
     i = 0
-    csv_file.write(str(num_convs)+',')
-    csv_file.write('Conv11x11'+',')
-    csv_file.write(str(time.time())+',')
+    #csv_file.write(str(num_convs)+',')
+    #csv_file.write('Conv11x11'+',')
+    #csv_file.write(str(time.time())+',')
     while(i < n_iter):
         out = conv11x11_net(input).cuda()
         with open(gpuLoadFile, 'r') as gpuFile:
@@ -218,8 +218,8 @@ for num_convs in num_conv_list:
         torch.cuda.synchronize()
         powerEst.append(PowerEst(input_tensor,input_channel,11,num_convs))
         i += 1
-    csv_file.write(str(time.time())+',')
-    csv_file.write('\n')
+    #csv_file.write(str(time.time())+',')
+    #csv_file.write('\n')
 
 print("Test Done")
 
