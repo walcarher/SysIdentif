@@ -229,6 +229,13 @@ print("Test Done")
 #k = np.concatenate((k_s,k_s,k_s,k_s,k_s),axis=1)
 #N = np.concatenate((np.full_like(k_s, 100),np.full_like(k_s, 200),np.full_like(k_s, 300),np.full_like(k_s, 400),np.full_like(k_s, 500)),axis=1)
 
+# Save results
+file = open('PowerPlot_GPU.pkl', 'wb')
+pickle.dump(power, file)
+pickle.dump(powerEst, file)
+print("Data saved in file PowerPlot_GPU.pkl")
+
+# Plot results
 plt.figure()
 x = np.linspace(1, len(power), len(power))
 plt.plot(x,np.asarray(power))
