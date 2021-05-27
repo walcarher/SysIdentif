@@ -122,7 +122,8 @@ for num_convs in num_conv_list:
         return x
 
     # Convolution layer model
-    conv1x1_net = Conv1x1_Net()print(conv1x1_net)
+    conv1x1_net = Conv1x1_Net()
+    print(conv1x1_net)
     time.sleep(time_delay)
 
     print("Now running ...")
