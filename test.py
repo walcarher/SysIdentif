@@ -48,6 +48,9 @@ input = torch.randn(1,input_channel, input_tensor, input_tensor).cuda()
 #		yield start
 #		start += step
 
+power = []
+powerEst = []
+
 #for num_convs in iter_range(start_num_convs, max_num_convs, step_size_convs):
 for num_convs in num_conv_list:
 
@@ -121,9 +124,7 @@ for num_convs in num_conv_list:
 	# Convolution layer model
 	conv1x1_net = Conv1x1_Net()
 	print(conv1x1_net)
-	time.sleep(time_delay)
-    power = []
-    powerEst = []
+    time.sleep(time_delay)
 
 	print("Now running ...")
 	i = 0
