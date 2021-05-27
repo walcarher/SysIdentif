@@ -30,7 +30,7 @@ input_tensor = 16 # input image/tensor size i.e. 224x224 for ImageNet
 input_channel = 3
 #start_num_convs = 100 # starting number of filters or depth of the output tensor
 #max_num_convs = 3000 # max number of filters or depth of the output tensor
-num_conv_list = [100, 200, 300, 400, 500]
+num_conv_list = [300, 400, 500, 600, 700]
 #step_size_convs = 100 # step size from start to maximum number of iterations
 n_iter = 5000  # Number of iterations on a single convolution run
 	       # the average of results is reported in output file
