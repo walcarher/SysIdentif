@@ -32,7 +32,7 @@ input_channel = 3
 #max_num_convs = 3000 # max number of filters or depth of the output tensor
 num_conv_list = [100, 200, 300, 400, 500]
 #step_size_convs = 100 # step size from start to maximum number of iterations
-n_iter = 100  # Number of iterations on a single convolution run
+n_iter = 1000  # Number of iterations on a single convolution run
 	       # the average of results is reported in output file
 time_delay = 0.2 # Pause between running tests
 
