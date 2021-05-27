@@ -26,8 +26,8 @@ def PowerEst(HW, C, k, N):
     return parameters[0]*(HW**3)+parameters[1]*(HW**2)+parameters[2]*(HW)+parameters[3]+parameters[4]*np.log(C)+parameters[5] + \
     parameters[6]*(k**2)+parameters[7]*(k)+parameters[8]+parameters[9]*np.log(N)+parameters[10]+parameters[11]
     
-input_tensor = 64 # input image/tensor size i.e. 224x224 for ImageNet
-input_channel = 3
+input_tensor = 32 # input image/tensor size i.e. 224x224 for ImageNet
+input_channel = 100
 #start_num_convs = 100 # starting number of filters or depth of the output tensor
 #max_num_convs = 3000 # max number of filters or depth of the output tensor
 num_conv_list = [200, 300, 400, 500, 600]
