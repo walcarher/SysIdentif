@@ -156,7 +156,7 @@ for WH_in in WH_in_list:
                 LAT = 1000*av_elapsed_time # in miliSeconds
                 av_power = power/n_iter
                 POW = av_power/1000 # in Watts
-                E = POW * av_elapsed_time # in Joules
+                E = POW * av_elapsed_time # in mJoules
                 T = WH_in * WH_in * C_in * 4 / (av_elapsed_time * 1024 * 1024 * 1024) # in GBytes/seconds
                 torch.cuda.empty_cache()
                 

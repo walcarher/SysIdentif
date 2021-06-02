@@ -483,7 +483,7 @@ file = open('parametersGPU.pkl', 'wb')
 pickle.dump(parameterPOW, file)
 
 fileE = open('parametersEGPU.pkl', 'wb')
-pickle.dump(parameterE, file)
+pickle.dump(parameterE, fileE)
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
