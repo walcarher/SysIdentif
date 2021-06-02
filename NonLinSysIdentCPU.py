@@ -418,32 +418,32 @@ featureData = np.array([WH, C, K, N])
 # x: a vector of K samples containing multiple-variables per sample x = (WH, C, k, N) 
 # bj: parameters per model. Must be of the same size as x
 @Name('Latency Aggregation')
-def LatAggModel(x ,b0 ,b1, b2, b3):
+def LatAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[0](x[0], *selectedParameters[0]) + \
     b1*selectedModels[1](x[1], *selectedParameters[1]) + \
     b2*selectedModels[2](x[2], *selectedParameters[2]) + \
-    b3*selectedModels[3](x[3], *selectedParameters[3])
+    b3*selectedModels[3](x[3], *selectedParameters[3]) + b4
     
 @Name('Power Aggregation')
-def PowAggModel(x ,b0 ,b1, b2, b3):
+def PowAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[4](x[0], *selectedParameters[4]) + \
     b1*selectedModels[5](x[1], *selectedParameters[5]) + \
     b2*selectedModels[6](x[2], *selectedParameters[6]) + \
-    b3*selectedModels[7](x[3], *selectedParameters[7])
+    b3*selectedModels[7](x[3], *selectedParameters[7]) + b4
     
 @Name('Energy Aggregation')
-def EneAggModel(x ,b0 ,b1, b2, b3):
+def EneAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[8](x[0], *selectedParameters[8]) + \
     b1*selectedModels[9](x[1], *selectedParameters[9]) + \
     b2*selectedModels[10](x[2], *selectedParameters[10]) + \
-    b3*selectedModels[11](x[3], *selectedParameters[11])
+    b3*selectedModels[11](x[3], *selectedParameters[11]) + b4
     
 @Name('Throughput Aggregation')
-def ThrAggModel(x ,b0 ,b1, b2, b3):
+def ThrAggModel(x ,b0 ,b1, b2, b3, b4):
     return b0*selectedModels[12](x[0], *selectedParameters[12]) + \
     b1*selectedModels[13](x[1], *selectedParameters[13]) + \
     b2*selectedModels[14](x[2], *selectedParameters[14]) + \
-    b3*selectedModels[15](x[3], *selectedParameters[15])
+    b3*selectedModels[15](x[3], *selectedParameters[15]) + b4
 
 # Full Dataset identification 
 LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
@@ -465,6 +465,15 @@ print('Power NRMSE: ' + str(NRMSE(POW, featureData, PowAggModel, POW_parameters)
 print('Energy NRMSE: ' + str(NRMSE(E, featureData, EneAggModel, E_parameters)))
 print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters)))
 
+# Save results for test
+parameterE = np.concatenate((E_parameters[0]*selectedParameters[8], \
+                E_parameters[1]*selectedParameters[9], \
+                E_parameters[2]*selectedParameters[10], \
+                E_parameters[3]*selectedParameters[11], \
+                [E_parameters[4]]))
+                
+file = open('parametersECPU.pkl', 'wb')
+pickle.dump(parameterE, file)
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:

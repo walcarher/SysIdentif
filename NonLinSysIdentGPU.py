@@ -472,8 +472,18 @@ parameterPOW = np.concatenate((POW_parameters[0]*selectedParameters[4], \
                 POW_parameters[3]*selectedParameters[7], \
                 [POW_parameters[4]]))
                 
+# Save results for test
+parameterE = np.concatenate((E_parameters[0]*selectedParameters[8], \
+                E_parameters[1]*selectedParameters[9], \
+                E_parameters[2]*selectedParameters[10], \
+                E_parameters[3]*selectedParameters[11], \
+                [E_parameters[4]]))
+                
 file = open('parametersGPU.pkl', 'wb')
 pickle.dump(parameterPOW, file)
+
+fileE = open('parametersEGPU.pkl', 'wb')
+pickle.dump(parameterE, file)
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
