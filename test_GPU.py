@@ -23,7 +23,7 @@ else:
     
 # Enenergy KPI estimation function from previous SI parameters
 def EnergyEst(HW, C, k, N):
-    return parameters[0]*(HW**2)+parameters[1]*(HW)+parameters[2]+parameters[3]*(C**3)+parameters[4]**(C**2)+parameters[5]*(C) + \
+    return parameters[0]*(HW**2)+parameters[1]*(HW)+parameters[2]+parameters[3]*(C**3)+parameters[4]*(C**2)+parameters[5]*(C) + \
     parameters[6]+parameters[7]*(k**3)+parameters[8]*(k**2)+parameters[9]*(k)+parameters[10]+parameters[11]*(N**2)+parameters[12]*(N)+parameters[13]+parameters[14] 
     
 input_tensor = 32 # input image/tensor size i.e. 224x224 for ImageNet
