@@ -21,7 +21,7 @@ if not file:
 else:
     parameters = pickle.load(file)
     
-# Enenergy KPI estimation function from previous SI parameters
+# Energy KPI estimation function from previous SI parameters
 def EnergyEst(HW, C, k, N):
     return parameters[0]*(HW**2)+parameters[1]*(HW)+parameters[2]+parameters[3]*(C**3)+parameters[4]*(C**2)+parameters[5]*(C) + \
     parameters[6]+parameters[7]*(k**3)+parameters[8]*(k**2)+parameters[9]*(k)+parameters[10]+parameters[11]*(N**2)+parameters[12]*(N)+parameters[13]+parameters[14] 
@@ -121,123 +121,41 @@ for num_convs in num_conv_list:
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
             x = self.conv1(x).cuda()			
             return x
-
-    # Convolution layer model
-    conv1x1_net = Conv1x1_Net()
-    print(conv1x1_net)
-    time.sleep(time_delay)
-
-    print("Now running ...")
-    i = 0
-    #csv_file.write(str(num_convs)+',')
-    #csv_file.write('Conv1x1'+',')
-    #csv_file.write(str(time.time())+',')
-    while(i < n_iter):
-        start = time.time()
+            
+    convkxk_s1_net_list = [Conv1x1_s1_Net().cuda(), Conv3x3_s1_Net().cuda(), Conv5x5_s1_Net().cuda(), Conv7x7_s1_Net().cuda(), Conv11x11_s1_Net().cuda()]
+            
+    for convkxk_s1_net in convkxk_s1_net_list:
+        
+        # Convolution layer model
+        print("Now running ...")
+        print(convkxk_s1_net)
+        # Delay  
+        time.sleep(time_delay)
+        iter = 0
+        # Stochastic excitation with uniform distribution
+        torch.cuda.seed()
         input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-        out = conv1x1_net(input).cuda()
-        with open(gpuLoadFile, 'r') as gpuFile:
-            power.append(float(gpuFile.read()))
-        torch.cuda.synchronize()
-        latency.append(time.time() - start)
-        energyEst.append(EnergyEst(input_tensor,input_channel,1,num_convs))
-        i += 1
-    #csv_file.write(str(time.time())+',')
-    #csv_file.write('\n')
-
-    # Convolution layer model
-    conv3x3_net = Conv3x3_Net()
-    print(conv3x3_net)
-
-    time.sleep(time_delay)
-    print("Now running ...")
-    i = 0
-    #csv_file.write(str(num_convs)+',')
-    #csv_file.write('Conv3x3'+',')
-    #csv_file.write(str(time.time())+',')
-    while(i < n_iter):
-        start = time.time()
-        input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-        out = conv3x3_net(input).cuda()
-        with open(gpuLoadFile, 'r') as gpuFile:
-            power.append(float(gpuFile.read()))
-        torch.cuda.synchronize()
-        latency.append(time.time() - start)
-        energyEst.append(EnergyEst(input_tensor,input_channel,3,num_convs))
-        i += 1
-    #csv_file.write(str(time.time())+',')
-    #csv_file.write('\n')
-
-    # Convolution layer model
-    conv5x5_net = Conv5x5_Net()
-    print(conv5x5_net)
-
-    time.sleep(time_delay)
-    print("Now running ...")
-    i = 0
-    #csv_file.write(str(num_convs)+',')
-    #csv_file.write('Conv5x5'+',')
-    #csv_file.write(str(time.time())+',')
-    while(i < n_iter):
-        start = time.time()
-        input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-        out = conv5x5_net(input).cuda()
-        with open(gpuLoadFile, 'r') as gpuFile:
-            power.append(float(gpuFile.read()))
-        torch.cuda.synchronize()
-        latency.append(time.time() - start)
-        energyEst.append(EnergyEst(input_tensor,input_channel,5,num_convs))
-        i += 1
-    #csv_file.write(str(time.time())+',')
-    #csv_file.write('\n')
-
-    # Convolution layer model
-    conv7x7_net = Conv7x7_Net()
-    print(conv7x7_net)
-
-    time.sleep(time_delay)
-    print("Now running ...")
-    i = 0
-    #csv_file.write(str(num_convs)+',')
-    #csv_file.write('Conv7x7'+',')
-    #csv_file.write(str(time.time())+',')
-    while(i < n_iter):
-        start = time.time()
-        input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-        out = conv7x7_net(input).cuda()
-        with open(gpuLoadFile, 'r') as gpuFile:
-            power.append(float(gpuFile.read()))
-        torch.cuda.synchronize()
-        latency.append(time.time() - start)
-        energyEst.append(EnergyEst(input_tensor,input_channel,7,num_convs))
-        i += 1
-    #csv_file.write(str(time.time())+',')
-    #csv_file.write('\n')
-
-    # Convolution layer model
-    conv11x11_net = Conv11x11_Net()
-    print(conv11x11_net)
-
-    time.sleep(time_delay)
-    print("Now running ...")
-    i = 0
-    #csv_file.write(str(num_convs)+',')
-    #csv_file.write('Conv11x11'+',')
-    #csv_file.write(str(time.time())+',')
-    while(i < n_iter):
-        start = time.time()
-        input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-        out = conv11x11_net(input).cuda()
-        with open(gpuLoadFile, 'r') as gpuFile:
-            power.append(float(gpuFile.read()))
-        torch.cuda.synchronize()
-        latency.append(time.time() - start)
-        energyEst.append(EnergyEst(input_tensor,input_channel,11,num_convs))
-        i += 1
-    #csv_file.write(str(time.time())+',')
-    #csv_file.write('\n')
-
-print("Test Done")
+        convkxk_s1_net.conv1.weight.data.random_().cuda()
+        convkxk_s1_net.conv1.bias.data.random_().cuda()
+        convkxk_s1_net.cuda()            
+        out = convkxk_s1_net(input).cuda()
+        torch.cuda.synchronize()                
+        print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out))
+        # Iterate over multiple tests
+        while(iter < n_iter):
+            start = time.time()
+            torch.cuda.seed()
+            input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
+            convkxk_s1_net.conv1.weight.data.random_().cuda()
+            convkxk_s1_net.conv1.bias.data.random_().cuda()
+            convkxk_s1_net.cuda()            
+            out = convkxk_s1_net(input).cuda()
+            with open(gpuLoadFile, 'r') as gpuFile:
+                power.append(float(gpuFile.read())
+            torch.cuda.synchronize()
+            latency.append(time.time() - start)
+            energyEst.append(EnergyEst(input_tensor,input_channel,1,num_convs))
+            iter += 1
 
 #HW = 64
 #C = 3
