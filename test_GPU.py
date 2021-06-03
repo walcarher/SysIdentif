@@ -153,7 +153,7 @@ for num_convs in num_conv_list:
                 power.append(float(gpuFile.read()))
             torch.cuda.synchronize()
             latency.append(time.time() - start)
-            energyEst.append(EnergyEst(input_tensor,input_channel,1,num_convs))
+            energyEst.append(EnergyEst(input_tensor,input_channel,convkxk_s1_net.conv1.kernel_size[0],num_convs))
             iter += 1
 
 #HW = 64

@@ -51,7 +51,7 @@ mean = np.mean(y)
 std = np.std(y)
 #y_norm = (y - np.mean(y)) / (np.std(y))
 plt.plot(x,y,'k-',linewidth=1, label='Measured Energy')
-y = np.asarray(energyEst)+0.75
+y = energyEst
 y = (y - np.min(y)) / (np.max(y)-np.min(y))
 plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
 #plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
