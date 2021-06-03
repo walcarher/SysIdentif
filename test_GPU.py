@@ -122,10 +122,9 @@ for num_convs in num_conv_list:
             x = self.conv1(x).cuda()			
             return x
             
-    convkxk_s1_net_list = [Conv1x1_s1_Net().cuda(), Conv3x3_s1_Net().cuda(), Conv5x5_s1_Net().cuda(), Conv7x7_s1_Net().cuda(), Conv11x11_s1_Net().cuda()]
+    convkxk_s1_net_list = [Conv1x1_Net().cuda(), Conv3x3_Net().cuda(), Conv5x5_Net().cuda(), Conv7x7_Net().cuda(), Conv11x11_Net().cuda()]
             
     for convkxk_s1_net in convkxk_s1_net_list:
-        
         # Convolution layer model
         print("Now running ...")
         print(convkxk_s1_net)
@@ -140,7 +139,7 @@ for num_convs in num_conv_list:
         convkxk_s1_net.cuda()            
         out = convkxk_s1_net(input).cuda()
         torch.cuda.synchronize()                
-        print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (WH_in, C_in, convkxk_s1_net.conv1.kernel_size[0], C_out))
+        print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (input_tensor, input_channel, convkxk_s1_net.conv1.kernel_size[0], num_convs))
         # Iterate over multiple tests
         while(iter < n_iter):
             start = time.time()
@@ -151,7 +150,7 @@ for num_convs in num_conv_list:
             convkxk_s1_net.cuda()            
             out = convkxk_s1_net(input).cuda()
             with open(gpuLoadFile, 'r') as gpuFile:
-                power.append(float(gpuFile.read())
+                power.append(float(gpuFile.read()))
             torch.cuda.synchronize()
             latency.append(time.time() - start)
             energyEst.append(EnergyEst(input_tensor,input_channel,1,num_convs))
