@@ -67,7 +67,7 @@ for num_convs in num_conv_list:
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = self.conv1(x).cuda()
+            x = F.relu(self.conv1(x)).cuda()
             return x
 
     class Conv3x3_Net(nn.Module):
@@ -80,7 +80,7 @@ for num_convs in num_conv_list:
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = self.conv1(x).cuda()			
+            x = F.relu(self.conv1(x)).cuda()			
             return x
 
     class Conv5x5_Net(nn.Module):
@@ -93,7 +93,7 @@ for num_convs in num_conv_list:
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = self.conv1(x).cuda()			
+            x = F.relu(self.conv1(x)).cuda()			
             return x
 
     class Conv7x7_Net(nn.Module):
@@ -106,7 +106,7 @@ for num_convs in num_conv_list:
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = self.conv1(x).cuda()			
+            x = F.relu(self.conv1(x)).cuda()			
             return x
 
     class Conv11x11_Net(nn.Module):
@@ -119,7 +119,7 @@ for num_convs in num_conv_list:
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = self.conv1(x).cuda()			
+            x = F.relu(self.conv1(x)).cuda()			
             return x
             
     convkxk_s1_net_list = [Conv1x1_Net().cuda(), Conv3x3_Net().cuda(), Conv5x5_Net().cuda(), Conv7x7_Net().cuda(), Conv11x11_Net().cuda()]
