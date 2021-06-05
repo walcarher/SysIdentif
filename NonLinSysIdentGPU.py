@@ -485,6 +485,29 @@ pickle.dump(parameterPOW, file)
 fileE = open('parametersEGPU.pkl', 'wb')
 pickle.dump(parameterE, fileE)
 
+# Plot models 
+WH_mod = np.arange(1, 100, 1)
+C_mod = np.arange(1, 500, 1)
+X, Y = np.meshgrid(WH_mod, C_mod)
+k_mod = k_const*np.ones_like(X)
+N_mod = N_const*np.ones_like(Y)
+Z = EneAggModel([X,Y,k_mod, N_mod],*E_parameters)
+
+fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+                       
+k_mod = np.arange(1, 11, 1)
+N_mod = np.arange(1, 500, 1)
+X, Y = np.meshgrid(k_mod, N_mod)
+WH_mod = WH_const*np.ones_like(X)
+C_mod = C_const*np.ones_like(Y)
+Z = EneAggModel([WH_mod,C_mod,X,Y],*E_parameters)
+
+fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
     print("Validating results with 10-Fold Cross-Validation...")

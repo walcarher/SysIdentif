@@ -461,16 +461,22 @@ def PowAggModel(x ,*b):
 @Name('Energy Aggregation')
 @ParameterNumber(selectedModels[8].parameter_number+selectedModels[9].parameter_number + \
                  selectedModels[10].parameter_number+selectedModels[11].parameter_number)
+# def EneAggModel(x ,*b):
+    # index = len(selectedParameters[8])
+    # HW_model = selectedModels[8](x[0], *b[0:index])
+    # index2 = index + len(selectedParameters[9])
+    # C_model = selectedModels[9](x[1], *b[index:index2])
+    # index3 = index2 + len(selectedParameters[10])
+    # k_model = selectedModels[10](x[2], *b[index2:index3])
+    # index4 = index3 + len(selectedParameters[11])
+    # N_model = selectedModels[11](x[3], *b[index3:index4])
+    # return HW_model + C_model + k_model + N_model
 def EneAggModel(x ,*b):
-    index = len(selectedParameters[8])
-    HW_model = selectedModels[8](x[0], *b[0:index])
-    index2 = index + len(selectedParameters[9])
-    C_model = selectedModels[9](x[1], *b[index:index2])
-    index3 = index2 + len(selectedParameters[10])
-    k_model = selectedModels[10](x[2], *b[index2:index3])
-    index4 = index3 + len(selectedParameters[11])
-    N_model = selectedModels[11](x[3], *b[index3:index4])
-    return HW_model + C_model + k_model + N_model
+    HW_model = QuadModel(x[0],b[0],b[1],b[2])
+    C_model = LinModel(x[1],b[3],b[4])
+    k_model = QuadModel(x[2],b[5],b[6],b[7])
+    N_model = LinModel(x[3],b[8],b[9])
+    return HW_model * C_model * k_model * N_model
     
 @Name('Throughput Aggregation')
 @ParameterNumber(selectedModels[12].parameter_number+selectedModels[13].parameter_number + \
@@ -489,7 +495,8 @@ def ThrAggModel(x ,*b):
 # Full Dataset identification 
 LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
 POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
-E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
+#E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
+E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.array([1,1,1,1,1,1,1,1,1,1]), maxfev=10000)
 T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
 
 # Print Strong regressor parameters
@@ -518,7 +525,7 @@ C_mod = np.arange(1, 500, 1)
 X, Y = np.meshgrid(WH_mod, C_mod)
 k_mod = k_const*np.ones_like(X)
 N_mod = N_const*np.ones_like(Y)
-Z = EneAggModel([X,Y,k_mod, N_mod],*E_parameters)
+Z = EneAggModel([X,Y,k_mod, N_mod],*LAT_parameters)
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
@@ -529,7 +536,7 @@ N_mod = np.arange(1, 500, 1)
 X, Y = np.meshgrid(k_mod, N_mod)
 WH_mod = WH_const*np.ones_like(X)
 C_mod = C_const*np.ones_like(Y)
-Z = EneAggModel([WH_mod,C_mod,X,Y],*E_parameters)
+Z = EneAggModel([WH_mod,C_mod,X,Y],*LAT_parameters)
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
