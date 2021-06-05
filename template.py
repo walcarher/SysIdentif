@@ -442,7 +442,7 @@ def LatAggModel(x, *b):
     k_model = selectedModels[2](x[2], *b[index2:index3])
     index4 = index3 + len(selectedParameters[3])
     N_model = selectedModels[3](x[3], *b[index3:index4])
-    return HW_model + C_model + k_model + N_model
+    return HW_model * C_model * k_model * N_model
     
 @Name('Power Aggregation')
 @ParameterNumber(selectedModels[4].parameter_number+selectedModels[5].parameter_number + \
@@ -456,7 +456,7 @@ def PowAggModel(x ,*b):
     k_model = selectedModels[6](x[2], *b[index2:index3])
     index4 = index3 + len(selectedParameters[7])
     N_model = selectedModels[7](x[3], *b[index3:index4])
-    return HW_model + C_model + k_model + N_model
+    return HW_model * C_model * k_model * N_model
     
 @Name('Energy Aggregation')
 @ParameterNumber(selectedModels[8].parameter_number+selectedModels[9].parameter_number + \
@@ -470,7 +470,7 @@ def PowAggModel(x ,*b):
     # k_model = selectedModels[10](x[2], *b[index2:index3])
     # index4 = index3 + len(selectedParameters[11])
     # N_model = selectedModels[11](x[3], *b[index3:index4])
-    # return HW_model + C_model + k_model + N_model
+    # return HW_model * C_model * k_model * N_model
 def EneAggModel(x ,*b):
     HW_model = QuadModel(x[0],b[0],b[1],b[2])
     C_model = LinModel(x[1],b[3],b[4])
@@ -490,7 +490,7 @@ def ThrAggModel(x ,*b):
     k_model = selectedModels[14](x[2], *b[index2:index3])
     index4 = index3 + len(selectedParameters[15])
     N_model = selectedModels[15](x[3], *b[index3:index4])
-    return HW_model + C_model + k_model + N_model
+    return HW_model * C_model * k_model * N_model
 
 # Full Dataset identification 
 LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
@@ -525,22 +525,32 @@ C_mod = np.arange(1, 500, 1)
 X, Y = np.meshgrid(WH_mod, C_mod)
 k_mod = k_const*np.ones_like(X)
 N_mod = N_const*np.ones_like(Y)
-Z = EneAggModel([X,Y,k_mod, N_mod],*LAT_parameters)
-
+Z = EneAggModel([X,Y,k_mod, N_mod],*E_parameters)
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
+plt.title('Energy Model vs Input Tensor Size')
+ax.set_xlabel('Width and Height (WH)')
+#ax.set_xlim(,)
+ax.set_ylabel('Number of Channels (C)')
+#ax.set_ylim(,)
+ax.set_zlabel('Energy (mJ)')
                        
 k_mod = np.arange(1, 11, 1)
 N_mod = np.arange(1, 500, 1)
 X, Y = np.meshgrid(k_mod, N_mod)
 WH_mod = WH_const*np.ones_like(X)
 C_mod = C_const*np.ones_like(Y)
-Z = EneAggModel([WH_mod,C_mod,X,Y],*LAT_parameters)
-
+Z = EneAggModel([WH_mod,C_mod,X,Y],*E_parameters)
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
+plt.title('Energy Modelk vs Kernel Tensor')
+ax.set_xlabel('Kernel Size (k)')
+#ax.set_xlim(,)
+ax.set_ylabel('Number of Filters (N)')
+#ax.set_ylim(,)
+ax.set_zlabel('Energy (mJ)')
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:

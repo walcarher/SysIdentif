@@ -31,15 +31,15 @@ def EnergyEst(x ,*b):
     C_model = LinModel(x[1],b[3],b[4])
     k_model = QuadModel(x[2],b[5],b[6],b[7])
     N_model = LinModel(x[3],b[8],b[9])
-    return (HW_model * C_model) * (k_model * N_model)
+    return HW_model * C_model * k_model * N_model
 
 # Load GPU Power KPI time series to test
-file = open('PowerPlot_GPU.pkl', 'rb')
-if not file:
-    sys.exit("No PowerPlot_GPU.pkl file was found")
-else:
-    power = pickle.load(file)
-    powerEst = pickle.load(file)
+# file = open('PowerPlot_GPU.pkl', 'rb')
+# if not file:
+    # sys.exit("No PowerPlot_GPU.pkl file was found")
+# else:
+    # power = pickle.load(file)
+    # powerEst = pickle.load(file)
 
 # Plot Power results
 # plt.figure()
@@ -104,8 +104,8 @@ N = np.concatenate([200*np.ones(5000),300*np.ones(5000),400*np.ones(5000),500*np
 energyEst = EnergyEst([WH,C,k,N],*parameters)
 energyEst = np.delete(energyEst,0)
 y = np.asarray(energyEst)
-y = (y - np.min(y)) / (np.max(y)-np.min(y))
-plt.plot(x,(max-min)*y+min,'g',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
+#y = (y - np.min(y)) / (np.max(y)-np.min(y))
+plt.plot(x,1000*y,'g',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
 #plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
