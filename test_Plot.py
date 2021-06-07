@@ -6,6 +6,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import pickle
 
+# Linear model
 def LinModel(x, a1, a0):
     return a1*x + a0
 
@@ -25,7 +26,7 @@ def ExpModel(x, a2, a1, a0):
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
 
-    
+# CPU Energy KPI estimation function from previous SI parameters    
 def EnergyEstCPU(x ,*b):
     HW_model = QuadModel(x[0],b[0],b[1],b[2])
     C_model = LinModel(x[1],b[3],b[4])
@@ -41,8 +42,13 @@ def EnergyEstGPU(x ,*b):
     N_model = QuadModel(x[3],b[11],b[12],b[13])
     return HW_model * C_model * k_model * N_model
     
-# GPU Energy KPI estimation function from previous SI parameters
-
+# FPGA Energy KPI estimation function from previous SI parameters
+def EnergyEstFPGA(x ,*b):
+    HW_model = QuadModel(x[0],b[0],b[1],b[2])
+    C_model = QuadModel(x[1],b[3],b[4],b[5])
+    k_model = LinModel(x[2],b[6],b[7])
+    N_model = QuadModel(x[3],b[8],b[9],b[10])
+    return HW_model * C_model * k_model * N_model
 
 # Load GPU Power KPI time series to test
 # file = open('PowerPlot_GPU.pkl', 'rb')
@@ -86,8 +92,7 @@ energyCPU.pop(0)
 plt.figure()
 x = np.linspace(1, len(energyCPU), len(energyCPU))
 y = np.asarray(energyCPU)
-
-plt.plot(x,y,'-',color='royalblue',linewidth=1, label='Measured Energy')
+plt.plot(x,y,'-',color='coral',linewidth=1, label='Measured Energy')
 
 # Load parameters to test
 file = open('parametersECPU.pkl', 'rb')
@@ -95,7 +100,6 @@ if not file:
     sys.exit("No parametersECPU.pkl file was found")
 else:
     parametersCPU = pickle.load(file)
-    print(parametersCPU)
 
 # Generate synthetic data for features    
 WH = 32*np.ones(25000)
@@ -106,9 +110,7 @@ N = np.concatenate([200*np.ones(5000),300*np.ones(5000),400*np.ones(5000),500*np
 energyEstCPU = EnergyEstCPU([WH,C,k,N],*parametersCPU)
 energyEstCPU = np.delete(energyEstCPU,0)
 y = np.asarray(energyEstCPU)
-#y = (y - np.min(y)) / (np.max(y)-np.min(y))
-plt.plot(x,1000*y,color='navy',linestyle='dashed', linewidth=3, label='Estimated CPU Energy')
-#plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
+plt.plot(x,1000*y,color='red',linestyle='dashed', linewidth=3, label='Estimated CPU Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
 ##############################################################GPU#######################################################
@@ -133,23 +135,29 @@ if not file:
     sys.exit("No parametersEGPU.pkl file was found")
 else:
     parametersGPU = pickle.load(file)
-    print(parametersGPU)
-
-# Generate synthetic data for features    
-WH = 32*np.ones(25000)
-C = 100*np.ones(25000)
-k = np.tile(np.concatenate([np.ones(1000),3*np.ones(1000),5*np.ones(1000),7*np.ones(1000),11*np.ones(1000)]),5)
-N = np.concatenate([200*np.ones(5000),300*np.ones(5000),400*np.ones(5000),500*np.ones(5000),600*np.ones(5000)])
 
 energyEstGPU = EnergyEstGPU([WH,C,k,N],*parametersGPU)
 energyEstGPU = np.delete(energyEstGPU,0)
 y = np.asarray(energyEstGPU)
-#y = (y - np.min(y)) / (np.max(y)-np.min(y))
 plt.plot(x,1000*y, color='darkgreen',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
 
+##############################################################FPGA#######################################################
 
+# Load parameters to test
+file = open('parametersEFPGA.pkl', 'rb')
+if not file:
+    sys.exit("No parametersEFPGA.pkl file was found")
+else:
+    parametersFPGA = pickle.load(file)
+
+energyEstFPGA = EnergyEstFPGA([WH,C,k,N],*parametersFPGA)
+energyEstFPGA = np.delete(energyEstFPGA,0)
+y = np.asarray(energyEstFPGA)
+plt.plot(x,y/1000000, color='navy',linestyle='dashed', linewidth=3, label='Estimated FPGA Energy')
+plt.xlabel('Number of Channels (N)')
+plt.ylabel('Energy (mJ)')
 #plt.grid()
 plt.legend()
 

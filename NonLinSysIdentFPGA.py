@@ -521,16 +521,9 @@ print('ALM NRMSE: ' + str(NRMSE(ALM, featureData, ALMAggModel, ALM_parameters)))
 print('ALUT NRMSE: ' + str(NRMSE(ALUT, featureData, ALUTAggModel, ALUT_parameters)))
 print('LAB NRMSE: ' + str(NRMSE(LAB, featureData, LABAggModel, LAB_parameters)))
 print('M20K NRMSE: ' + str(NRMSE(M20K, featureData, M20KAggModel, M20K_parameters)))
-
-# Save results for test
-parameterE = np.concatenate((E_parameters[0]*selectedParameters[8], \
-                E_parameters[1]*selectedParameters[9], \
-                E_parameters[2]*selectedParameters[10], \
-                E_parameters[3]*selectedParameters[11], \
-                [E_parameters[4]]))
                 
 file = open('parametersEFPGA.pkl', 'wb')
-pickle.dump(parameterE, file)
+pickle.dump(E_parameters, file)
 
 # Plot models 
 if args.model_plot:
