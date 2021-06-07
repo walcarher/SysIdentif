@@ -22,6 +22,9 @@ parser.add_argument("-d", "--data_plot", type = int, choices=[0, 1],
 parser.add_argument("-r", "--result_plot", type = int, choices=[0, 1],
 		 help = "Shows resulting plots from the best selected models",
 		 default = 0)
+parser.add_argument("-m", "--model_plot", type = int, choices=[0, 1],
+		 help = "Shows resulting plots from the strong regressor model",
+		 default = 0)
 parser.add_argument("-v", "--validation_plot", type = int, choices=[0, 1],
 		 help = "Shows parameter box plots from 10-fold cross validation ",
 		 default = 0)
@@ -45,32 +48,45 @@ class Name:
     def __call__(self, f):
         f.name = self.name
         return f
+        
+class ParameterNumber:
+    def __init__(self, r):
+        self.parameter_number = r
+
+    def __call__(self, f):
+        f.parameter_number = self.parameter_number
+        return f
 
 # Weak regressor with for single-feature modeling before selection
 # x: a vector of K samples of a single-feature
 # ai: number of parameters per model
 # Linear model
 @Name('Linear')
+@ParameterNumber(2)
 def LinModel(x, a1, a0):
     return a1*x + a0
 
 # Quadratic model
 @Name('Quadratic')
+@ParameterNumber(3)
 def QuadModel(x, a2, a1, a0):
     return a2*np.power(x, 2) + a1*x + a0
 
 # Logarithmic model
 @Name('Logarithmic')  
+@ParameterNumber(2)
 def LogModel(x, a1, a0):
     return a1*np.log(x) + a0
     
 # Exponential model   
 @Name('Exponential') 
+@ParameterNumber(3)
 def ExpModel(x, a2, a1, a0):
     return a2*np.power(a1, x) + a0
     
 # Polynomial model   
 @Name('Polynomial') 
+@ParameterNumber(4)
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
     
@@ -348,7 +364,7 @@ for sample in dataset:
     N.append(sample[3])
     LAT.append(sample[4])
     POW.append(sample[5])
-    E.append(sample[6])
+    E.append(sample[6]*1000000)
     T.append(sample[7])
     ALM.append(sample[8])
     ALUT.append(sample[9])
@@ -360,72 +376,128 @@ featureData = np.array([WH, C, K, N])
 
 # Strong regressor aggregation or combination for multi-feature modeling after selection
 # x: a vector of K samples containing multiple-variables per sample x = (WH, C, k, N) 
-# bj: parameters per model. Must be of the same size as x
+# b: parameters per model. Must be of the same size as x
 @Name('Latency Aggregation')
-def LatAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[0](x[0], *selectedParameters[0]) + \
-    b1*selectedModels[1](x[1], *selectedParameters[1]) + \
-    b2*selectedModels[2](x[2], *selectedParameters[2]) + \
-    b3*selectedModels[3](x[3], *selectedParameters[3]) + b4
+@ParameterNumber(selectedModels[0].parameter_number+selectedModels[1].parameter_number + \
+                 selectedModels[2].parameter_number+selectedModels[3].parameter_number)
+def LatAggModel(x, *b):
+    index = len(selectedParameters[0])
+    HW_model = selectedModels[0](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[1])
+    C_model = selectedModels[1](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[2])
+    k_model = selectedModels[2](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[3])
+    N_model = selectedModels[3](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('Power Aggregation')
-def PowAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[4](x[0], *selectedParameters[4]) + \
-    b1*selectedModels[5](x[1], *selectedParameters[5]) + \
-    b2*selectedModels[6](x[2], *selectedParameters[6]) + \
-    b3*selectedModels[7](x[3], *selectedParameters[7]) + b4
+@ParameterNumber(selectedModels[4].parameter_number+selectedModels[5].parameter_number + \
+                 selectedModels[6].parameter_number+selectedModels[7].parameter_number)
+def PowAggModel(x ,*b):
+    index = len(selectedParameters[4])
+    HW_model = selectedModels[4](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[5])
+    C_model = selectedModels[5](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[6])
+    k_model = selectedModels[6](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[7])
+    N_model = selectedModels[7](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('Energy Aggregation')
-def EneAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[8](x[0], *selectedParameters[8]) + \
-    b1*selectedModels[9](x[1], *selectedParameters[9]) + \
-    b2*selectedModels[10](x[2], *selectedParameters[10]) + \
-    b3*selectedModels[11](x[3], *selectedParameters[11]) + b4
+@ParameterNumber(selectedModels[8].parameter_number+selectedModels[9].parameter_number + \
+                 selectedModels[10].parameter_number+selectedModels[11].parameter_number)
+def EneAggModel(x ,*b):
+    index = len(selectedParameters[8])
+    HW_model = selectedModels[8](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[9])
+    C_model = selectedModels[9](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[10])
+    k_model = selectedModels[10](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[11])
+    N_model = selectedModels[11](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('Throughput Aggregation')
-def ThrAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[12](x[0], *selectedParameters[12]) + \
-    b1*selectedModels[13](x[1], *selectedParameters[13]) + \
-    b2*selectedModels[14](x[2], *selectedParameters[14]) + \
-    b3*selectedModels[15](x[3], *selectedParameters[15]) + b4
+@ParameterNumber(selectedModels[12].parameter_number+selectedModels[13].parameter_number + \
+                 selectedModels[14].parameter_number+selectedModels[15].parameter_number)
+def ThrAggModel(x ,*b):
+    index = len(selectedParameters[12])
+    HW_model = selectedModels[12](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[13])
+    C_model = selectedModels[13](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[14])
+    k_model = selectedModels[14](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[15])
+    N_model = selectedModels[15](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('ALM Aggregation')
-def ALMAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[16](x[0], *selectedParameters[16]) + \
-    b1*selectedModels[17](x[1], *selectedParameters[17]) + \
-    b2*selectedModels[18](x[2], *selectedParameters[18]) + \
-    b3*selectedModels[19](x[3], *selectedParameters[19]) + b4
+@ParameterNumber(selectedModels[16].parameter_number+selectedModels[17].parameter_number + \
+                 selectedModels[18].parameter_number+selectedModels[19].parameter_number)
+def ALMAggModel(x ,*b):
+    index = len(selectedParameters[16])
+    HW_model = selectedModels[16](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[17])
+    C_model = selectedModels[17](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[18])
+    k_model = selectedModels[18](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[19])
+    N_model = selectedModels[19](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
 
 @Name('ALUT Aggregation')
-def ALUTAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[20](x[0], *selectedParameters[20]) + \
-    b1*selectedModels[21](x[1], *selectedParameters[21]) + \
-    b2*selectedModels[22](x[2], *selectedParameters[22]) + \
-    b3*selectedModels[23](x[3], *selectedParameters[23]) + b4
+@ParameterNumber(selectedModels[20].parameter_number+selectedModels[21].parameter_number + \
+                 selectedModels[22].parameter_number+selectedModels[23].parameter_number)
+def ALUTAggModel(x ,*b):
+    index = len(selectedParameters[20])
+    HW_model = selectedModels[20](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[21])
+    C_model = selectedModels[21](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[22])
+    k_model = selectedModels[22](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[23])
+    N_model = selectedModels[23](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
 
 @Name('LAB Aggregation')
-def LABAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[24](x[0], *selectedParameters[24]) + \
-    b1*selectedModels[25](x[1], *selectedParameters[25]) + \
-    b2*selectedModels[26](x[2], *selectedParameters[26]) + \
-    b3*selectedModels[27](x[3], *selectedParameters[27]) + b4
+@ParameterNumber(selectedModels[24].parameter_number+selectedModels[25].parameter_number + \
+                 selectedModels[26].parameter_number+selectedModels[27].parameter_number)
+def LABAggModel(x ,*b):
+    index = len(selectedParameters[24])
+    HW_model = selectedModels[24](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[25])
+    C_model = selectedModels[25](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[26])
+    k_model = selectedModels[26](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[27])
+    N_model = selectedModels[27](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('M20K Aggregation')
-def M20KAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[28](x[0], *selectedParameters[28]) + \
-    b1*selectedModels[29](x[1], *selectedParameters[29]) + \
-    b2*selectedModels[30](x[2], *selectedParameters[30]) + \
-    b3*selectedModels[31](x[3], *selectedParameters[31]) + b4
+@ParameterNumber(selectedModels[28].parameter_number+selectedModels[29].parameter_number + \
+                 selectedModels[30].parameter_number+selectedModels[31].parameter_number)
+def M20KAggModel(x ,*b):
+    index = len(selectedParameters[28])
+    HW_model = selectedModels[28](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[29])
+    C_model = selectedModels[29](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[30])
+    k_model = selectedModels[30](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[31])
+    N_model = selectedModels[31](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
 
 # Full Dataset identification 
-LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
-POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
-E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
-T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
-ALM_parameters, ALM_covariance = curve_fit(ALMAggModel, featureData, ALM, maxfev=1000)
-ALUT_parameters, ALUT_covariance = curve_fit(ALUTAggModel, featureData, ALUT, maxfev=1000)
-LAB_parameters, LAB_covariance = curve_fit(LABAggModel, featureData, LAB, maxfev=1000)
-M20K_parameters, M20K_covariance = curve_fit(M20KAggModel, featureData, M20K, maxfev=1000)
+LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
+POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
+E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
+T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
+ALM_parameters, ALM_covariance = curve_fit(ALMAggModel, featureData, ALM, p0=np.concatenate(selectedParameters[16:20]), maxfev=10000)
+ALUT_parameters, ALUT_covariance = curve_fit(ALUTAggModel, featureData, ALUT, p0=np.concatenate(selectedParameters[20:24]), maxfev=10000)
+LAB_parameters, LAB_covariance = curve_fit(LABAggModel, featureData, LAB, p0=np.concatenate(selectedParameters[24:28]), maxfev=10000)
+M20K_parameters, M20K_covariance = curve_fit(M20KAggModel, featureData, M20K, p0=np.concatenate(selectedParameters[28:32]), maxfev=10000)
 
 # Print Strong regressor parameters
 print('Strong regressor parameters:')
@@ -459,6 +531,44 @@ parameterE = np.concatenate((E_parameters[0]*selectedParameters[8], \
                 
 file = open('parametersEFPGA.pkl', 'wb')
 pickle.dump(parameterE, file)
+
+# Plot models 
+if args.model_plot:
+    strRegModels = [LatAggModel, PowAggModel, EneAggModel, ThrAggModel, ALMAggModel, ALUTAggModel, LABAggModel, M20KAggModel]
+    strParameters = [LAT_parameters, POW_parameters, E_parameters, T_parameters, ALM_parameters, ALUT_parameters, LAB_parameters, M20K_parameters]
+    for Model, parameters, kpi_name, kpi_unit in zip(strRegModels, strParameters, kpi_names, kpi_units):
+        WH_mod = np.arange(1, 13, 1)
+        C_mod = np.arange(1, 11, 1)
+        X, Y = np.meshgrid(WH_mod, C_mod)
+        k_mod = k_const*np.ones_like(X)
+        N_mod = N_const*np.ones_like(Y)
+        Z = Model([X,Y,k_mod, N_mod],*parameters)
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+        plt.title(kpi_name + ' Model vs ' + feature_names[0])
+        ax.set_xlabel(feature_names[0] + ' (' + feature_symbol[0] + ')')
+        #ax.set_xlim(,)
+        ax.set_ylabel(feature_names[1] + ' (' + feature_symbol[1] + ')')
+        #ax.set_ylim(,)
+        ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
+                               
+        k_mod = np.arange(1, 6, 1)
+        N_mod = np.arange(1, 11, 1)
+        X, Y = np.meshgrid(k_mod, N_mod)
+        WH_mod = WH_const*np.ones_like(X)
+        C_mod = C_const*np.ones_like(Y)
+        Z = Model([WH_mod,C_mod,X,Y],*parameters)
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+        plt.title(kpi_name + ' vs ' + feature_names[2])
+        ax.set_xlabel(feature_names[2] + ' (' + feature_symbol[2] + ')')
+        #ax.set_xlim(,)
+        ax.set_ylabel(feature_names[3] + ' (' + feature_symbol[3] + ')')
+        #ax.set_ylim(,)
+        ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
+        #ax.set_zlim(,)
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:

@@ -363,7 +363,7 @@ def PowAggModel(x ,*b):
     k_model = selectedModels[6](x[2], *b[index2:index3])
     index4 = index3 + len(selectedParameters[7])
     N_model = selectedModels[7](x[3], *b[index3:index4])
-    return HW_model + C_model + k_model + N_model
+    return HW_model * C_model * k_model * N_model
     
 @Name('Energy Aggregation')
 @ParameterNumber(selectedModels[8].parameter_number+selectedModels[9].parameter_number + \
@@ -493,10 +493,10 @@ if args.validation_plot:
             # Split for validation data
             validationData = shuffledData[:,np.arange(i*foldSize,i*foldSize+foldSize,dtype=int)]
             # Identification over training Dataset
-            LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], maxfev=1000)
-            POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], maxfev=1000)
-            E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], maxfev=1000)
-            T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], maxfev=1000)
+            LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
+            POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
+            E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
+            T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
             # Compute resulting NRMSE on validation Dataset fold
             distNMRSE.append(NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters))
             avLAT_NMRSE += NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters)
