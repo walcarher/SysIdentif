@@ -76,6 +76,9 @@ if not file:
 else:
     energyCPU    = pickle.load(file)
 
+# Repeat measurements to match GPU's iterations
+energyCPU = np.repeat(np.asarray(energyCPU),10).tolist()
+len(energyCPU)
 # Remove initialization terms
 energyCPU.pop(0)
     
@@ -84,7 +87,7 @@ plt.figure()
 x = np.linspace(1, len(energyCPU), len(energyCPU))
 y = np.asarray(energyCPU)
 
-plt.plot(x,y,'k-',linewidth=1, label='Measured Energy')
+plt.plot(x,y,'-',color='royalblue',linewidth=1, label='Measured Energy')
 
 # Load parameters to test
 file = open('parametersECPU.pkl', 'rb')
@@ -95,16 +98,16 @@ else:
     print(parametersCPU)
 
 # Generate synthetic data for features    
-WH = 32*np.ones(2500)
-C = 100*np.ones(2500)
-k = np.tile(np.concatenate([np.ones(100),3*np.ones(100),5*np.ones(100),7*np.ones(100),11*np.ones(100)]),5)
-N = np.concatenate([200*np.ones(500),300*np.ones(500),400*np.ones(500),500*np.ones(500),600*np.ones(500)])
+WH = 32*np.ones(25000)
+C = 100*np.ones(25000)
+k = np.tile(np.concatenate([np.ones(1000),3*np.ones(1000),5*np.ones(1000),7*np.ones(1000),11*np.ones(1000)]),5)
+N = np.concatenate([200*np.ones(5000),300*np.ones(5000),400*np.ones(5000),500*np.ones(5000),600*np.ones(5000)])
 
 energyEstCPU = EnergyEstCPU([WH,C,k,N],*parametersCPU)
 energyEstCPU = np.delete(energyEstCPU,0)
 y = np.asarray(energyEstCPU)
 #y = (y - np.min(y)) / (np.max(y)-np.min(y))
-plt.plot(x,1000*y,'g',linestyle='dashed', linewidth=3, label='Estimated CPU Energy')
+plt.plot(x,1000*y,color='navy',linestyle='dashed', linewidth=3, label='Estimated CPU Energy')
 #plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
@@ -120,11 +123,9 @@ else:
 energyGPU.pop(0)
     
 # Plot Energy results
-plt.figure()
 x = np.linspace(1, len(energyGPU), len(energyGPU))
 y = np.asarray(energyGPU)
-
-plt.plot(x,y,'k-',linewidth=1, label='Measured Energy')
+plt.plot(x,y,'-',color='mediumseagreen',linewidth=1, label='Measured Energy')
 
 # Load parameters to test
 file = open('parametersEGPU.pkl', 'rb')
@@ -144,8 +145,7 @@ energyEstGPU = EnergyEstGPU([WH,C,k,N],*parametersGPU)
 energyEstGPU = np.delete(energyEstGPU,0)
 y = np.asarray(energyEstGPU)
 #y = (y - np.min(y)) / (np.max(y)-np.min(y))
-plt.plot(x,1000*y,'g',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
-#plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
+plt.plot(x,1000*y, color='darkgreen',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
 
