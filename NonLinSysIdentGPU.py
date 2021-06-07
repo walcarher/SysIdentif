@@ -22,19 +22,22 @@ parser.add_argument("-d", "--data_plot", type = int, choices=[0, 1],
 parser.add_argument("-r", "--result_plot", type = int, choices=[0, 1],
 		 help = "Shows resulting plots from the best selected models",
 		 default = 0)
+parser.add_argument("-m", "--model_plot", type = int, choices=[0, 1],
+		 help = "Shows resulting plots from the strong regressor model",
+		 default = 0)
 parser.add_argument("-v", "--validation_plot", type = int, choices=[0, 1],
 		 help = "Shows parameter box plots from 10-fold cross validation ",
 		 default = 0)
 args = parser.parse_args()
 
-# Load previously generated dataset from DataGenMultivariate.py
-file = open('datasetMultivariate.pkl', 'rb')
+# Load previously generated dataset from DataGenMultivariateGPU.py
+file = open('datasetMultivariateGPU.pkl', 'rb')
 if not file:
-    sys.exit("No datasetMultivariate.pkl file was found")
+    sys.exit("No datasetMultivariateGPU.pkl file was found")
 else:
     dataset = pickle.load(file)
 if not dataset:
-    sys.exit("Data loaded was empty from datasetMultivariate.pkl file")
+    sys.exit("Data loaded was empty from datasetMultivariateGPU.pkl file")
 
 # Single Variable Weak Regressor/Learners definition
 # Function attributes
@@ -45,32 +48,45 @@ class Name:
     def __call__(self, f):
         f.name = self.name
         return f
+        
+class ParameterNumber:
+    def __init__(self, r):
+        self.parameter_number = r
+
+    def __call__(self, f):
+        f.parameter_number = self.parameter_number
+        return f
 
 # Weak regressor with for single-feature modeling before selection
 # x: a vector of K samples of a single-feature
 # ai: number of parameters per model
 # Linear model
 @Name('Linear')
+@ParameterNumber(2)
 def LinModel(x, a1, a0):
     return a1*x + a0
 
 # Quadratic model
 @Name('Quadratic')
+@ParameterNumber(3)
 def QuadModel(x, a2, a1, a0):
     return a2*np.power(x, 2) + a1*x + a0
 
 # Logarithmic model
 @Name('Logarithmic')  
+@ParameterNumber(2)
 def LogModel(x, a1, a0):
     return a1*np.log(x) + a0
     
 # Exponential model   
 @Name('Exponential') 
+@ParameterNumber(3)
 def ExpModel(x, a2, a1, a0):
     return a2*np.power(a1, x) + a0
     
 # Polynomial model   
 @Name('Polynomial') 
+@ParameterNumber(4)
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
     
@@ -127,13 +143,13 @@ k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
 # Ordered KPI names
 kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
 # with units
-kpi_units = ['ms', 'W', 'J', 'GB/s']
+kpi_units = ['ms', 'W', 'mJ', 'GB/s']
 # Ordered feature names
 feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
 # with 
 feature_symbol = ['HW', 'C', 'k', 'N']
 
-# Retrieving sample data from Dataset (sample = [WH, C, k, N, LAT, POW, E, T])
+# Retrieving sample data from Dataset (sample = [WH, C, k, N, LAT, POW, E, T, R_ALM, R_ALUT, R_LAB, R_M20K])
 for sample in dataset:
     if sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
@@ -147,142 +163,46 @@ for sample in dataset:
         N_var.append(sample[3])
         LAT_kN.append(sample[4])
         POW_kN.append(sample[5])
-        E_kN.append(sample[6])
-        T_kN.append(sample[7])       
+        E_kN.append(sample[6]) 
+        T_kN.append(sample[7])
 
+kpi_WHC = [LAT_WHC, POW_WHC, E_WHC, T_WHC]        
+kpi_kN = [LAT_kN, POW_kN, E_kN, T_kN]
 # Plot subsampled dataset for 3D Visualization if data_plot is enabled
 if args.data_plot:
-    # Latency vs Input tensor size (LAT vs WH and C) with kernel size and depth constant (k and N)
-    fig1 = plt.figure()
-    X = np.array(WH_var)
-    Y = np.array(C_var)
-    Z = np.array(LAT_WHC)
-    ax1 = fig1.gca(projection='3d')
-    ax1.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax1.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
-    ax1.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
-    plt.title('Latency vs Input Tensor Size')
-    ax1.set_xlabel('Width and Height (WH)')
-    #ax.set_xlim(,)
-    ax1.set_ylabel('Number of Channels (C)')
-    #ax.set_ylim(,)
-    ax1.set_zlabel('Latency (ms)')
-    #ax.set_zlim(,)
-    # Latency vs Filter size and depth (LAT vs k and N) with input tensor size constant (WH and C)
-    fig2 = plt.figure()
-    X = np.array(k_var)
-    Y = np.array(N_var)
-    Z = np.array(LAT_kN)
-    ax2 = fig2.gca(projection='3d')
-    ax2.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax2.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
-    ax2.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
-    plt.title('Latency vs Kernel Tensor')
-    ax2.set_xlabel('Kernel Size (k)')
-    #ax.set_xlim(,)
-    ax2.set_ylabel('Number of Filters (N)')
-    #ax.set_ylim(,)
-    ax2.set_zlabel('Latency (ms)')
-    #ax.set_zlim(,)
-
-    # Energy vs Input tensor size (E vs WH and C) with kernel size and depth constant (k and N)
-    fig3 = plt.figure()
-    X = np.array(WH_var)
-    Y = np.array(C_var)
-    Z = np.array(E_WHC)
-    ax3 = fig3.gca(projection='3d')
-    ax3.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax3.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
-    ax3.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
-    plt.title('Energy vs Input Tensor Size')
-    ax3.set_xlabel('Width and Height (WH)')
-    #ax.set_xlim(,)
-    ax3.set_ylabel('Number of Channels (C)')
-    #ax.set_ylim(,)
-    ax3.set_zlabel('Energy (J)')
-    #ax.set_zlim(,)
-    # Energy vs Filter size and depth (E vs k and N) with input tensor size constant (WH and C)
-    fig4 = plt.figure()
-    X = np.array(k_var)
-    Y = np.array(N_var)
-    Z = np.array(E_kN)
-    ax4 = fig4.gca(projection='3d')
-    ax4.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax4.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
-    ax4.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
-    plt.title('Energy vs Kernel Tensor')
-    ax4.set_xlabel('Kernel Size (k)')
-    #ax.set_xlim(,)
-    ax4.set_ylabel('Number of Filters (N)')
-    #ax.set_ylim(,)
-    ax4.set_zlabel('Energy (J)')
-    #ax.set_zlim(,)
-
-    # Power vs Input tensor size (P vs WH and C) with kernel size and depth constant (k and N)
-    fig5 = plt.figure()
-    X = np.array(WH_var)
-    Y = np.array(C_var)
-    Z = np.array(POW_WHC)
-    ax5 = fig5.gca(projection='3d')
-    ax5.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax5.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
-    ax5.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
-    plt.title('Power vs Input Tensor Size')
-    ax5.set_xlabel('Width and Height (WH)')
-    #ax.set_xlim(,)
-    ax5.set_ylabel('Number of Channels (C)')
-    #ax.set_ylim(,)
-    ax5.set_zlabel('Power (W)')
-    #ax.set_zlim(,)
-    # Power vs Filter size and depth (P vs k and N) with input tensor size constant (WH and C)
-    fig6 = plt.figure()
-    X = np.array(k_var)
-    Y = np.array(N_var)
-    Z = np.array(POW_kN)
-    ax6 = fig6.gca(projection='3d')
-    ax6.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax6.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
-    ax6.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
-    plt.title('Power vs Kernel Tensor')
-    ax6.set_xlabel('Kernel Size (k)')
-    #ax.set_xlim(,)
-    ax6.set_ylabel('Number of Filters (N)')
-    #ax.set_ylim(,)
-    ax6.set_zlabel('Power (W)')
-    #ax.set_zlim(,)
-
-    # Throughput vs Input tensor size (T vs WH and C) with kernel size and depth constant (k and N)
-    fig6 = plt.figure()
-    X = np.array(WH_var)
-    Y = np.array(C_var)
-    Z = np.array(T_WHC)
-    ax6 = fig6.gca(projection='3d')
-    ax6.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax6.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
-    ax6.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
-    plt.title('Throughput vs Input Tensor Size')
-    ax6.set_xlabel('Width and Height (WH)')
-    #ax.set_xlim(,)
-    ax6.set_ylabel('Number of Channels (C)')
-    #ax.set_ylim(,)
-    ax6.set_zlabel('Throughput (GB/s)')
-    #ax.set_zlim(,)
-    # Throughput vs Filter size and depth (T vs k and N) with input tensor size constant (WH and C)
-    fig7 = plt.figure()
-    X = np.array(k_var)
-    Y = np.array(N_var)
-    Z = np.array(T_kN)
-    ax7 = fig7.gca(projection='3d')
-    ax7.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
-    ax7.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
-    ax7.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
-    plt.title('Throughput vs Kernel Tensor')
-    ax7.set_xlabel('Kernel Size (k)')
-    #ax.set_xlim(,)
-    ax7.set_ylabel('Number of Filters (N)')
-    #ax.set_ylim(,)
-    ax7.set_zlabel('Throughput (GB/s)')
-    #ax.set_zlim(,)
+    for kpi_whc, kpi_kn, kpi_name, kpi_unit in zip(kpi_WHC, kpi_kN, kpi_names, kpi_units):
+        # KPI vs Input tensor size (KPI vs WH and C) with kernel size and depth constant (k and N)
+        fig = plt.figure()
+        X = np.array(WH_var)
+        Y = np.array(C_var)
+        Z = np.array(kpi_whc)
+        ax = fig.gca(projection='3d')
+        ax.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
+        ax.tricontour(X, Y, Z, zdir='x', offset=WH_max, cmap=cm.coolwarm)
+        ax.tricontour(X, Y, Z, zdir='y', offset=C_max, cmap=cm.coolwarm)
+        plt.title(kpi_name + ' vs ' + feature_names[0])
+        ax.set_xlabel(feature_names[0] + ' (' + feature_symbol[0] + ')')
+        #ax.set_xlim(,)
+        ax.set_ylabel(feature_names[1] + ' (' + feature_symbol[1] + ')')
+        #ax.set_ylim(,)
+        ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
+        #ax.set_zlim(,)
+        # KPI vs Filter size and depth (KPI vs k and N) with input tensor size constant (WH and C)
+        fig = plt.figure()
+        X = np.array(k_var)
+        Y = np.array(N_var)
+        Z = np.array(kpi_kn)
+        ax = fig.gca(projection='3d')
+        ax.plot_trisurf(X, Y, Z, linewidth=0.2, antialiased=True, cmap=cm.coolwarm, alpha=0.3)
+        ax.tricontour(X, Y, Z, zdir='x', offset=k_max, cmap=cm.coolwarm)
+        ax.tricontour(X, Y, Z, zdir='y', offset=N_max, cmap=cm.coolwarm)
+        plt.title(kpi_name + ' vs ' + feature_names[2])
+        ax.set_xlabel(feature_names[2] + ' (' + feature_symbol[2] + ')')
+        #ax.set_xlim(,)
+        ax.set_ylabel(feature_names[3] + ' (' + feature_symbol[3] + ')')
+        #ax.set_ylim(,)
+        ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
+        #ax.set_zlim(,)
 
 # Defining constant and variable inputs for Dataset subsampling for SI
 WH_var, LAT_WH, POW_WH, E_WH, T_WH = [],[],[],[],[]
@@ -416,40 +336,74 @@ featureData = np.array([WH, C, K, N])
 
 # Strong regressor aggregation or combination for multi-feature modeling after selection
 # x: a vector of K samples containing multiple-variables per sample x = (WH, C, k, N) 
-# bj: parameters per model. Must be of the same size as x
+# b: parameters per model. Must be of the same size as x
 @Name('Latency Aggregation')
-def LatAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[0](x[0], *selectedParameters[0]) + \
-    b1*selectedModels[1](x[1], *selectedParameters[1]) + \
-    b2*selectedModels[2](x[2], *selectedParameters[2]) + \
-    b3*selectedModels[3](x[3], *selectedParameters[3]) + b4
+@ParameterNumber(selectedModels[0].parameter_number+selectedModels[1].parameter_number + \
+                 selectedModels[2].parameter_number+selectedModels[3].parameter_number)
+def LatAggModel(x, *b):
+    index = len(selectedParameters[0])
+    HW_model = selectedModels[0](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[1])
+    C_model = selectedModels[1](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[2])
+    k_model = selectedModels[2](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[3])
+    N_model = selectedModels[3](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('Power Aggregation')
-def PowAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[4](x[0], *selectedParameters[4]) + \
-    b1*selectedModels[5](x[1], *selectedParameters[5]) + \
-    b2*selectedModels[6](x[2], *selectedParameters[6]) + \
-    b3*selectedModels[7](x[3], *selectedParameters[7]) + b4
+@ParameterNumber(selectedModels[4].parameter_number+selectedModels[5].parameter_number + \
+                 selectedModels[6].parameter_number+selectedModels[7].parameter_number)
+def PowAggModel(x ,*b):
+    index = len(selectedParameters[4])
+    HW_model = selectedModels[4](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[5])
+    C_model = selectedModels[5](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[6])
+    k_model = selectedModels[6](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[7])
+    N_model = selectedModels[7](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
     
 @Name('Energy Aggregation')
-def EneAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[8](x[0], *selectedParameters[8]) + \
-    b1*selectedModels[9](x[1], *selectedParameters[9]) + \
-    b2*selectedModels[10](x[2], *selectedParameters[10]) + \
-    b3*selectedModels[11](x[3], *selectedParameters[11]) + b4
+@ParameterNumber(selectedModels[8].parameter_number+selectedModels[9].parameter_number + \
+                 selectedModels[10].parameter_number+selectedModels[11].parameter_number)
+def EneAggModel(x ,*b):
+    index = len(selectedParameters[8])
+    HW_model = selectedModels[8](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[9])
+    C_model = selectedModels[9](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[10])
+    k_model = selectedModels[10](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[11])
+    N_model = selectedModels[11](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
+# def EneAggModel(x ,*b):
+    # HW_model = QuadModel(x[0],b[0],b[1],b[2])
+    # C_model = LinModel(x[1],b[3],b[4])
+    # k_model = QuadModel(x[2],b[5],b[6],b[7])
+    # N_model = LinModel(x[3],b[8],b[9])
+    # return HW_model * C_model * k_model * N_model
     
 @Name('Throughput Aggregation')
-def ThrAggModel(x ,b0 ,b1, b2, b3, b4):
-    return b0*selectedModels[12](x[0], *selectedParameters[12]) + \
-    b1*selectedModels[13](x[1], *selectedParameters[13]) + \
-    b2*selectedModels[14](x[2], *selectedParameters[14]) + \
-    b3*selectedModels[15](x[3], *selectedParameters[15]) + b4
+@ParameterNumber(selectedModels[12].parameter_number+selectedModels[13].parameter_number + \
+                 selectedModels[14].parameter_number+selectedModels[15].parameter_number)
+def ThrAggModel(x ,*b):
+    index = len(selectedParameters[12])
+    HW_model = selectedModels[12](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[13])
+    C_model = selectedModels[13](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[14])
+    k_model = selectedModels[14](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[15])
+    N_model = selectedModels[15](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
 
 # Full Dataset identification 
-LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, maxfev=1000)
-POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, maxfev=1000)
-E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, maxfev=1000)
-T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, maxfev=1000)
+LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
+POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
+E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
+T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
 
 # Print Strong regressor parameters
 print('Strong regressor parameters:')
@@ -464,49 +418,48 @@ print('Latency NRMSE: ' + str(NRMSE(LAT, featureData, LatAggModel, LAT_parameter
 print('Power NRMSE: ' + str(NRMSE(POW, featureData, PowAggModel, POW_parameters)))
 print('Energy NRMSE: ' + str(NRMSE(E, featureData, EneAggModel, E_parameters)))
 print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters)))
-
-# Save results for test
-parameterPOW = np.concatenate((POW_parameters[0]*selectedParameters[4], \
-                POW_parameters[1]*selectedParameters[5], \
-                POW_parameters[2]*selectedParameters[6], \
-                POW_parameters[3]*selectedParameters[7], \
-                [POW_parameters[4]]))
                 
-# Save results for test
-parameterE = np.concatenate((E_parameters[0]*selectedParameters[8], \
-                E_parameters[1]*selectedParameters[9], \
-                E_parameters[2]*selectedParameters[10], \
-                E_parameters[3]*selectedParameters[11], \
-                [E_parameters[4]]))
-                
-file = open('parametersGPU.pkl', 'wb')
-pickle.dump(parameterPOW, file)
 
 fileE = open('parametersEGPU.pkl', 'wb')
-pickle.dump(parameterE, fileE)
+pickle.dump(E_parameters, fileE)
 
 # Plot models 
-WH_mod = np.arange(1, 100, 1)
-C_mod = np.arange(1, 500, 1)
-X, Y = np.meshgrid(WH_mod, C_mod)
-k_mod = k_const*np.ones_like(X)
-N_mod = N_const*np.ones_like(Y)
-Z = EneAggModel([X,Y,k_mod, N_mod],*E_parameters)
-
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
-                       
-k_mod = np.arange(1, 11, 1)
-N_mod = np.arange(1, 500, 1)
-X, Y = np.meshgrid(k_mod, N_mod)
-WH_mod = WH_const*np.ones_like(X)
-C_mod = C_const*np.ones_like(Y)
-Z = EneAggModel([WH_mod,C_mod,X,Y],*E_parameters)
-
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
+if args.model_plot:
+    strRegModels = [LatAggModel, PowAggModel, EneAggModel, ThrAggModel]
+    strParameters = [LAT_parameters, POW_parameters, E_parameters, T_parameters]
+    for Model, parameters, kpi_name, kpi_unit in zip(strRegModels, strParameters, kpi_names, kpi_units):
+        WH_mod = np.arange(1, 100, 1)
+        C_mod = np.arange(1, 500, 1)
+        X, Y = np.meshgrid(WH_mod, C_mod)
+        k_mod = k_const*np.ones_like(X)
+        N_mod = N_const*np.ones_like(Y)
+        Z = Model([X,Y,k_mod, N_mod],*parameters)
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+        plt.title(kpi_name + ' Model vs ' + feature_names[0])
+        ax.set_xlabel(feature_names[0] + ' (' + feature_symbol[0] + ')')
+        #ax.set_xlim(,)
+        ax.set_ylabel(feature_names[1] + ' (' + feature_symbol[1] + ')')
+        #ax.set_ylim(,)
+        ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
+                               
+        k_mod = np.arange(1, 11, 1)
+        N_mod = np.arange(1, 500, 1)
+        X, Y = np.meshgrid(k_mod, N_mod)
+        WH_mod = WH_const*np.ones_like(X)
+        C_mod = C_const*np.ones_like(Y)
+        Z = Model([WH_mod,C_mod,X,Y],*parameters)
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+        plt.title(kpi_name + ' vs ' + feature_names[2])
+        ax.set_xlabel(feature_names[2] + ' (' + feature_symbol[2] + ')')
+        #ax.set_xlim(,)
+        ax.set_ylabel(feature_names[3] + ' (' + feature_symbol[3] + ')')
+        #ax.set_ylim(,)
+        ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
+        #ax.set_zlim(,)
 
 #----------------------------------- k-Fold Cross Validation ------------------------------------
 if args.validation_plot:
@@ -537,10 +490,10 @@ if args.validation_plot:
             # Split for validation data
             validationData = shuffledData[:,np.arange(i*foldSize,i*foldSize+foldSize,dtype=int)]
             # Identification over training Dataset
-            LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], maxfev=1000)
-            POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], maxfev=1000)
-            E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], maxfev=1000)
-            T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], maxfev=1000)
+            LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
+            POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
+            E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
+            T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
             # Compute resulting NRMSE on validation Dataset fold
             distNMRSE.append(NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters))
             avLAT_NMRSE += NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters)

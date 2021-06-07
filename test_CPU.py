@@ -9,10 +9,13 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import pickle
+
+# Forcing CPU use. Check with 'nvpmodel -q' before proceeding to use 4-core ARM and/or 2-core Denver CPU 
+device = torch.device("cpu")
     
 # This files are to be found in the L4T version of TX2, this may vary in the future
-# It reads the latest GPU Power in mW from the INA3221 in the TegraTX2
-gpuLoadFile = '/sys/devices/3160000.i2c/i2c-0/0-0040/iio_device/in_power0_input'
+# It reads the latest CPU Power in mW from the INA3221 in the TegraTX2
+cpuLoadFile = '/sys/devices/3160000.i2c/i2c-0/0-0041/iio_device/in_power1_input'
     
 input_tensor = 32 # input image/tensor size i.e. 224x224 for ImageNet
 input_channel = 100
@@ -29,7 +32,7 @@ time_delay = 0.2 # Pause between running tests
 
 # Random input tensor or image with 1 batch, 1 channel and size 
 # input_tensorxinput_tensor
-input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
+input = torch.rand(1,input_channel, input_tensor, input_tensor)
 
 #def iter_range(start, end, step):
 #	while start <= end:
@@ -49,12 +52,12 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv1x1_Net,self).__init__()
             #1 batch size, n conv output, kernel size 1x1, stride 1-1
-            self.conv1 = nn.Conv2d(input_channel, num_convs, 1).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 1)
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
-            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = F.relu(self.conv1(x)).cuda()
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
+            x = F.relu(self.conv1(x))
             return x
 
     class Conv3x3_Net(nn.Module):
@@ -62,12 +65,12 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv3x3_Net,self).__init__()
             #1 batch size, n conv output, kernel size 3x3, stride 1-1
-            self.conv1 = nn.Conv2d(input_channel, num_convs, 3).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 3)
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
-            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = F.relu(self.conv1(x)).cuda()			
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
+            x = F.relu(self.conv1(x))			
             return x
 
     class Conv5x5_Net(nn.Module):
@@ -75,12 +78,12 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv5x5_Net,self).__init__()
             #1 batch size, n conv output, kernel size 5x5, stride 1-1
-            self.conv1 = nn.Conv2d(input_channel, num_convs, 5).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 5)
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
             #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = F.relu(self.conv1(x)).cuda()			
+            x = F.relu(self.conv1(x))			
             return x
 
     class Conv7x7_Net(nn.Module):
@@ -88,12 +91,12 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv7x7_Net,self).__init__()
             #1 batch size, n conv output, kernel size 7x7, stride 1-1
-            self.conv1 = nn.Conv2d(input_channel, num_convs, 7).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 7)
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
-            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = F.relu(self.conv1(x)).cuda()			
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
+            x = F.relu(self.conv1(x))			
             return x
 
     class Conv11x11_Net(nn.Module):
@@ -101,15 +104,15 @@ for num_convs in num_conv_list:
         def __init__(self):
             super(Conv11x11_Net,self).__init__()
             #1 batch size, n conv output, kernel size 11x11, stride 1-1
-            self.conv1 = nn.Conv2d(input_channel, num_convs, 11).cuda()
+            self.conv1 = nn.Conv2d(input_channel, num_convs, 11)
 
         def forward(self, x):
             # Maxpooling 2x2 and ReLu activation function
-            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2)).cuda()
-            x = F.relu(self.conv1(x)).cuda()			
+            #x = F.max_pool2d(F.relu(self.conv1(x)),(2,2))
+            x = F.relu(self.conv1(x))			
             return x
             
-    convkxk_s1_net_list = [Conv1x1_Net().cuda(), Conv3x3_Net().cuda(), Conv5x5_Net().cuda(), Conv7x7_Net().cuda(), Conv11x11_Net().cuda()]
+    convkxk_s1_net_list = [Conv1x1_Net(), Conv3x3_Net(), Conv5x5_Net(), Conv7x7_Net(), Conv11x11_Net()]
             
     for convkxk_s1_net in convkxk_s1_net_list:
         # Convolution layer model
@@ -119,26 +122,22 @@ for num_convs in num_conv_list:
         time.sleep(time_delay)
         iter = 0
         # Stochastic excitation with uniform distribution
-        torch.cuda.seed()
-        input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-        convkxk_s1_net.conv1.weight.data.random_().cuda()
-        convkxk_s1_net.conv1.bias.data.random_().cuda()
-        convkxk_s1_net.cuda()            
-        out = convkxk_s1_net(input).cuda()
-        torch.cuda.synchronize()                
+        input = torch.rand(1,input_channel, input_tensor, input_tensor)
+        convkxk_s1_net.conv1.weight.data.random_()
+        convkxk_s1_net.conv1.bias.data.random_()
+        convkxk_s1_net           
+        out = convkxk_s1_net(input)              
         print("Input Tensor Size: %d Number of Channels: %d Filter size: %d  Number of Filters: %d"  % (input_tensor, input_channel, convkxk_s1_net.conv1.kernel_size[0], num_convs))
         # Iterate over multiple tests
         while(iter < n_iter):
             start = time.time()
             torch.cuda.seed()
-            input = torch.rand(1,input_channel, input_tensor, input_tensor).cuda()
-            convkxk_s1_net.conv1.weight.data.random_().cuda()
-            convkxk_s1_net.conv1.bias.data.random_().cuda()
-            convkxk_s1_net.cuda()            
-            out = convkxk_s1_net(input).cuda()
-            with open(gpuLoadFile, 'r') as gpuFile:
-                power.append(float(gpuFile.read()))
-            torch.cuda.synchronize()
+            input = torch.rand(1,input_channel, input_tensor, input_tensor, device = device)
+            convkxk_s1_net.conv1.weight.data.random_()
+            convkxk_s1_net.conv1.bias.data.random_()          
+            out = convkxk_s1_net(input)
+            with open(cpuLoadFile, 'r') as cpuFile:
+                power.append(float(cpuFile.read()))
             latency.append(time.time() - start)
             iter += 1
 
@@ -151,9 +150,9 @@ for num_convs in num_conv_list:
 energy = (1000*np.asarray(latency))*(np.asarray(power)/1000) # in mJoules
 
 # Save results
-file = open('EnergyPlot_GPU.pkl', 'wb')
+file = open('EnergyPlot_CPU.pkl', 'wb')
 pickle.dump(energy.tolist(), file)
-print("Data saved in file EnergyPlot_GPU.pkl")
+print("Data saved in file EnergyPlot_CPU.pkl")
 
 # Plot results
 plt.figure()
