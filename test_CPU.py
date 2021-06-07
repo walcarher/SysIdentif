@@ -23,7 +23,7 @@ input_channel = 100
 #max_num_convs = 3000 # max number of filters or depth of the output tensor
 num_conv_list = [200, 300, 400, 500, 600]
 #step_size_convs = 100 # step size from start to maximum number of iterations
-n_iter = 1000  # Number of iterations on a single convolution run
+n_iter = 100  # Number of iterations on a single convolution run
 	       # the average of results is reported in output file
 time_delay = 0.2 # Pause between running tests
 
@@ -155,9 +155,9 @@ pickle.dump(energy.tolist(), file)
 print("Data saved in file EnergyPlot_CPU.pkl")
 
 # Plot results
-plt.figure()
-x = np.linspace(1, len(energy), len(energy))
-plt.plot(x,np.asarray(energy))
-plt.plot(x,np.asarray(energyEst))
-plt.grid()
-plt.show()
+# plt.figure()
+# x = np.linspace(1, len(energy), len(energy))
+# plt.plot(x,np.asarray(energy))
+# plt.plot(x,np.asarray(energyEst))
+# plt.grid()
+# plt.show()
