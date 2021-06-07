@@ -25,13 +25,24 @@ def ExpModel(x, a2, a1, a0):
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
 
-# Energy KPI estimation function from previous SI parameters
-def EnergyEst(x ,*b):
+    
+def EnergyEstCPU(x ,*b):
     HW_model = QuadModel(x[0],b[0],b[1],b[2])
     C_model = LinModel(x[1],b[3],b[4])
-    k_model = QuadModel(x[2],b[5],b[6],b[7])
-    N_model = LinModel(x[3],b[8],b[9])
+    k_model = PolyModel(x[2],b[5],b[6],b[7],b[8])
+    N_model = QuadModel(x[3],b[9],b[10],b[11])
     return HW_model * C_model * k_model * N_model
+    
+# GPU Energy KPI estimation function from previous SI parameters
+def EnergyEstGPU(x ,*b):
+    HW_model = QuadModel(x[0],b[0],b[1],b[2])
+    C_model = PolyModel(x[1],b[3],b[4],b[5],b[6])
+    k_model = PolyModel(x[2],b[7],b[8],b[9],b[10])
+    N_model = QuadModel(x[3],b[11],b[12],b[13])
+    return HW_model * C_model * k_model * N_model
+    
+# GPU Energy KPI estimation function from previous SI parameters
+
 
 # Load GPU Power KPI time series to test
 # file = open('PowerPlot_GPU.pkl', 'rb')
@@ -57,43 +68,71 @@ def EnergyEst(x ,*b):
 # #plt.grid()
 # plt.legend()
 
+##############################################################CPU#######################################################
+# Load CPU Energy KPI time series to test
+file = open('EnergyPlot_CPU.pkl', 'rb')
+if not file:
+    sys.exit("No EnergyPlot_CPU.pkl file was found")
+else:
+    energyCPU    = pickle.load(file)
+
+# Remove initialization terms
+energyCPU.pop(0)
+    
+# Plot Energy results
+plt.figure()
+x = np.linspace(1, len(energyCPU), len(energyCPU))
+y = np.asarray(energyCPU)
+
+plt.plot(x,y,'k-',linewidth=1, label='Measured Energy')
+
+# Load parameters to test
+file = open('parametersECPU.pkl', 'rb')
+if not file:
+    sys.exit("No parametersECPU.pkl file was found")
+else:
+    parametersCPU = pickle.load(file)
+    print(parametersCPU)
+
+# Generate synthetic data for features    
+WH = 32*np.ones(2500)
+C = 100*np.ones(2500)
+k = np.tile(np.concatenate([np.ones(100),3*np.ones(100),5*np.ones(100),7*np.ones(100),11*np.ones(100)]),5)
+N = np.concatenate([200*np.ones(500),300*np.ones(500),400*np.ones(500),500*np.ones(500),600*np.ones(500)])
+
+energyEstCPU = EnergyEstCPU([WH,C,k,N],*parametersCPU)
+energyEstCPU = np.delete(energyEstCPU,0)
+y = np.asarray(energyEstCPU)
+#y = (y - np.min(y)) / (np.max(y)-np.min(y))
+plt.plot(x,1000*y,'g',linestyle='dashed', linewidth=3, label='Estimated CPU Energy')
+#plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
+plt.xlabel('Number of Channels (N)')
+plt.ylabel('Energy (mJ)')
+##############################################################GPU#######################################################
 # Load GPU Energy KPI time series to test
 file = open('EnergyPlot_GPU.pkl', 'rb')
 if not file:
     sys.exit("No EnergyPlot_GPU.pkl file was found")
 else:
-    energy = pickle.load(file)
-    energyEst = pickle.load(file)
+    energyGPU    = pickle.load(file)
 
 # Remove initialization terms
-energy.pop(0)
-energyEst.pop(0)
+energyGPU.pop(0)
     
 # Plot Energy results
 plt.figure()
-x = np.linspace(1, len(energy), len(energy))
-y = np.asarray(energy)
-min = np.min(y)
-max = np.max(y)
-#y = (y - min) / (max-min)
+x = np.linspace(1, len(energyGPU), len(energyGPU))
+y = np.asarray(energyGPU)
 
-#y_norm = (y - np.mean(y)) / (np.std(y))
 plt.plot(x,y,'k-',linewidth=1, label='Measured Energy')
-#y = np.asarray(energyEst)
-
-#y = (y - np.min(y)) / (np.max(y)-np.min(y))
-#plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
-#plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
-#plt.xlabel('Number of Channels (N)')
-#plt.ylabel('Energy (mJ)')
 
 # Load parameters to test
-file = open('debugparametersEGPU.pkl', 'rb')
+file = open('parametersEGPU.pkl', 'rb')
 if not file:
-    sys.exit("No debugparametersEGPU.pkl file was found")
+    sys.exit("No parametersEGPU.pkl file was found")
 else:
-    parameters = pickle.load(file)
-    print(parameters)
+    parametersGPU = pickle.load(file)
+    print(parametersGPU)
 
 # Generate synthetic data for features    
 WH = 32*np.ones(25000)
@@ -101,9 +140,9 @@ C = 100*np.ones(25000)
 k = np.tile(np.concatenate([np.ones(1000),3*np.ones(1000),5*np.ones(1000),7*np.ones(1000),11*np.ones(1000)]),5)
 N = np.concatenate([200*np.ones(5000),300*np.ones(5000),400*np.ones(5000),500*np.ones(5000),600*np.ones(5000)])
 
-energyEst = EnergyEst([WH,C,k,N],*parameters)
-energyEst = np.delete(energyEst,0)
-y = np.asarray(energyEst)
+energyEstGPU = EnergyEstGPU([WH,C,k,N],*parametersGPU)
+energyEstGPU = np.delete(energyEstGPU,0)
+y = np.asarray(energyEstGPU)
 #y = (y - np.min(y)) / (np.max(y)-np.min(y))
 plt.plot(x,1000*y,'g',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
 #plt.plot(x,y,'g',linestyle='dashed', linewidth=3, label='Estimated Energy')
