@@ -84,6 +84,12 @@ def LogModel(x, a1, a0):
 def ExpModel(x, a2, a1, a0):
     return a2*np.power(a1, x) + a0
     
+# Reciprocal model   
+@Name('Reciprocal') 
+@ParameterNumber(2)
+def ReciModel(x, a1, a0):
+    return a1*(1/x) + a0
+    
 # Polynomial model   
 @Name('Polynomial') 
 @ParameterNumber(4)
@@ -242,7 +248,7 @@ kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [
 # List of features
 features = [WH_var, C_var, k_var, N_var]
 # Previously defined models
-Models = [LinModel, QuadModel, LogModel, ExpModel, PolyModel]
+Models = [LinModel, QuadModel, LogModel, ExpModel, ReciModel, PolyModel]
 # Obtained optimal parameters 
 parameters = []
 # Obtained RMSE
@@ -265,7 +271,7 @@ for kpis in kpis_variable:
             mape = MAPE(kpi, feature, Model, parameter)
             mapes.append(mape)
             # Computing cost with a LSE metric Loss and L2 regularization
-            cost = L2Cost(nrmse, parameter, 10)
+            cost = L2Cost(nrmse, parameter, 0.1)
             costs.append(cost)               
 
 # ----------------- Strong Regressor System Identification ----------------------------
@@ -300,7 +306,7 @@ for kpis in kpis_variable:
 # Plot results
 if args.result_plot:
     # plot colors and markers configurations
-    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
+    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-', 'k*-']
     k = 0
     for i in range(len(kpi_names)):
         for j in range(len(feature_names)):
@@ -400,10 +406,10 @@ def ThrAggModel(x ,*b):
     return HW_model * C_model * k_model * N_model
 
 # Full Dataset identification 
-LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
-POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
-E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
-T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
+LAT_parameters, LAT_covariance = curve_fit(LatAggModel, featureData, LAT, p0=np.concatenate(selectedParameters[0:4]), maxfev=10000)
+POW_parameters, POW_covariance = curve_fit(PowAggModel, featureData, POW, p0=np.concatenate(selectedParameters[4:8]), maxfev=10000)
+E_parameters, E_covariance = curve_fit(EneAggModel, featureData, E, p0=np.concatenate(selectedParameters[8:12]), maxfev=10000)
+T_parameters, T_covariance = curve_fit(ThrAggModel, featureData, T, p0=np.concatenate(selectedParameters[12:16]), maxfev=10000)
 
 # Print Strong regressor parameters
 print('Strong regressor parameters:')

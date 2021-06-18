@@ -84,6 +84,12 @@ def LogModel(x, a1, a0):
 def ExpModel(x, a2, a1, a0):
     return a2*np.power(a1, x) + a0
     
+# Reciprocal model   
+@Name('Reciprocal') 
+@ParameterNumber(2)
+def ReciModel(x, a1, a0):
+    return a1*(1/x) + a0
+    
 # Polynomial model   
 @Name('Polynomial') 
 @ParameterNumber(4)
@@ -276,7 +282,7 @@ kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [
 # List of features
 features = [WH_var, C_var, k_var, N_var]
 # Previously defined models
-Models = [LinModel, QuadModel, LogModel, ExpModel, PolyModel]
+Models = [LinModel, QuadModel, LogModel, ExpModel, ReciModel, PolyModel]
 # Obtained optimal parameters 
 parameters = []
 # Obtained RMSE
@@ -299,8 +305,8 @@ for kpis in kpis_variable:
             mape = MAPE(kpi, feature, Model, parameter)
             mapes.append(mape)
             # Computing cost with a LSE metric Loss and L2 regularization
-            cost = L2Cost(nrmse, parameter, 10)
-            costs.append(cost)               
+            cost = L2Cost(nrmse, parameter, 0.1)
+            costs.append(cost)          
 
 # ----------------- Strong Regressor System Identification ----------------------------
 # Competitive selection by LSE with L2 regularization as Loss function
@@ -334,7 +340,7 @@ for kpis in kpis_variable:
 # Plot results
 if args.result_plot:
     # plot colors and markers configurations
-    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-']
+    configs = ['r-', 'cs-', 'm^-', 'bD-', 'yp-', 'k*-']
     k = 0
     for i in range(len(kpi_names)):
         for j in range(len(feature_names)):

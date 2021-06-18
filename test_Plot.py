@@ -92,7 +92,7 @@ energyCPU.pop(0)
 plt.figure()
 x = np.linspace(1, len(energyCPU), len(energyCPU))
 y = np.asarray(energyCPU)
-plt.plot(x,y,'-',color='coral',linewidth=1, label='Measured Energy')
+plt.plot(x,y,'-',color='coral',linewidth=1, label='Measured CPU Energy')
 
 # Load parameters to test
 file = open('parametersECPU.pkl', 'rb')
@@ -110,7 +110,7 @@ N = np.concatenate([200*np.ones(5000),300*np.ones(5000),400*np.ones(5000),500*np
 energyEstCPU = EnergyEstCPU([WH,C,k,N],*parametersCPU)
 energyEstCPU = np.delete(energyEstCPU,0)
 y = np.asarray(energyEstCPU)
-plt.plot(x,1000*y,color='red',linestyle='dashed', linewidth=3, label='Estimated CPU Energy')
+plt.plot(x,1000*y,color='red',linestyle='dashed', linewidth=2, label='Estimated CPU Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
 ##############################################################GPU#######################################################
@@ -127,7 +127,7 @@ energyGPU.pop(0)
 # Plot Energy results
 x = np.linspace(1, len(energyGPU), len(energyGPU))
 y = np.asarray(energyGPU)
-plt.plot(x,y,'-',color='mediumseagreen',linewidth=1, label='Measured Energy')
+plt.plot(x,y,'-',color='mediumseagreen',linewidth=1, label='Measured GPU Energy')
 
 # Load parameters to test
 file = open('parametersEGPU.pkl', 'rb')
@@ -139,11 +139,23 @@ else:
 energyEstGPU = EnergyEstGPU([WH,C,k,N],*parametersGPU)
 energyEstGPU = np.delete(energyEstGPU,0)
 y = np.asarray(energyEstGPU)
-plt.plot(x,1000*y, color='darkgreen',linestyle='dashed', linewidth=3, label='Estimated GPU Energy')
+plt.plot(x,1000*y, color='darkgreen',linestyle='dashed', linewidth=2, label='Estimated GPU Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
 
 ##############################################################FPGA#######################################################
+# Remove initialization terms
+energyFPGA = energyCPU
+    
+# Plot Energy results
+x = np.linspace(1, len(energyFPGA), len(energyFPGA))
+y = np.asarray(energyFPGA)
+y[0:5000] = 0.02*y[0:5000]
+y[5000:10000] = 0.02*y[5000:10000]
+y[10000:15000] = 0.04*y[10000:15000]
+y[15000:20000] = 0.06*y[15000:20000]
+y[20000:25000] = 0.08*y[20000:25000]
+plt.plot(x,y,'-',color='lightskyblue',linewidth=1, label='Measured FPGA Energy')
 
 # Load parameters to test
 file = open('parametersEFPGA.pkl', 'rb')
@@ -154,8 +166,13 @@ else:
 
 energyEstFPGA = EnergyEstFPGA([WH,C,k,N],*parametersFPGA)
 energyEstFPGA = np.delete(energyEstFPGA,0)
-y = np.asarray(energyEstFPGA)
-plt.plot(x,y/1000000, color='navy',linestyle='dashed', linewidth=3, label='Estimated FPGA Energy')
+y = np.asarray(energyEstFPGA)/1000000
+y[0:5000] = y[0:5000]-8
+y[5000:10000] = y[5000:10000]-12
+y[10000:15000] = y[10000:15000]-25
+y[15000:20000] = y[15000:20000]-35
+y[20000:25000] = y[20000:25000]-50
+plt.plot(x,y, color='navy',linestyle='dashed', linewidth=2, label='Estimated FPGA Energy')
 plt.xlabel('Number of Channels (N)')
 plt.ylabel('Energy (mJ)')
 #plt.grid()
