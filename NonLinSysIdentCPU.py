@@ -149,7 +149,7 @@ k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
 # Ordered KPI names
 kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
 # with units
-kpi_units = ['ms', 'W', 'mJ', 'GB/s']
+kpi_units = ['s', 'W', 'mJ', 'GB/s']
 # Ordered feature names
 feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
 # with 
@@ -160,14 +160,14 @@ for sample in dataset:
     if sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
         C_var.append(sample[1])
-        LAT_WHC.append(sample[4])
+        LAT_WHC.append(sample[4]/1000)
         POW_WHC.append(sample[5])
         E_WHC.append(sample[6])
         T_WHC.append(sample[7])
     if sample[0] == WH_const and sample[1] == C_const:
         k_var.append(sample[2])
         N_var.append(sample[3])
-        LAT_kN.append(sample[4])
+        LAT_kN.append(sample[4]/1000)
         POW_kN.append(sample[5])
         E_kN.append(sample[6]) 
         T_kN.append(sample[7])
