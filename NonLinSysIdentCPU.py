@@ -459,7 +459,7 @@ if args.model_plot:
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
         surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
                                linewidth=0, antialiased=False)
-        plt.title(kpi_name + ' vs ' + feature_names[2])
+        plt.title(kpi_name + ' Model vs ' + feature_names[2])
         ax.set_xlabel(feature_names[2] + ' (' + feature_symbol[2] + ')')
         #ax.set_xlim(,)
         ax.set_ylabel(feature_names[3] + ' (' + feature_symbol[3] + ')')

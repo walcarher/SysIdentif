@@ -62,42 +62,46 @@ class ParameterNumber:
 # ai: number of parameters per model
 # Linear model
 @Name('Linear')
-@ParameterNumber(2)
-def LinModel(x, a1, a0):
-    return a1*x + a0
+@ParameterNumber(1)
+def LinModel(x, a0):
+    return a0*x
 
 # Quadratic model
 @Name('Quadratic')
-@ParameterNumber(3)
-def QuadModel(x, a2, a1, a0):
-    return a2*np.power(x, 2) + a1*x + a0
+@ParameterNumber(2)
+def QuadModel(x, a1, a0):
+    return a1*np.power(x, 2) + a0*x
 
 # Logarithmic model
 @Name('Logarithmic')  
-@ParameterNumber(2)
-def LogModel(x, a1, a0):
-    return a1*np.log(x) + a0
+@ParameterNumber(1)
+def LogModel(x, a0):
+    return a0*np.log(x)
     
 # Exponential model   
 @Name('Exponential') 
-@ParameterNumber(3)
-def ExpModel(x, a2, a1, a0):
-    return a2*np.power(a1, x) + a0
+@ParameterNumber(2)
+def ExpModel(x, a1, a0):
+    return a1*np.power(a0, x)
     
 # Reciprocal model   
 @Name('Reciprocal') 
-@ParameterNumber(2)
-def ReciModel(x, a1, a0):
-    return a1*(1/x) + a0
+@ParameterNumber(1)
+def ReciModel(x, a0):
+    return a0*(1/x)
     
 # Polynomial model   
 @Name('Polynomial') 
-@ParameterNumber(4)
-def PolyModel(x, a3, a2, a1, a0):
-    return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
+@ParameterNumber(3)
+def PolyModel(x, a2, a1, a0):
+    return a2*np.power(x, 3) + a1*np.power(x, 2) + a0*x
     
 
 # Error and Loss Metrics function definition
+# Least Square Error (LSE)
+def LSE(kpi, feature, Model, parameter):
+    return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)
+
 # Mean Absolute Percentage Error (MAPE)
 def MAPE(kpi, feature, Model, parameter):
     return np.absolute(np.sum((kpi - Model(np.asarray(feature), *parameter))/kpi))/len(kpi)
@@ -271,7 +275,7 @@ for kpis in kpis_variable:
             mape = MAPE(kpi, feature, Model, parameter)
             mapes.append(mape)
             # Computing cost with a LSE metric Loss and L2 regularization
-            cost = L2Cost(nrmse, parameter, 0.1)
+            cost = L1Cost(nrmse, parameter, 0.1)
             costs.append(cost)               
 
 # ----------------- Strong Regressor System Identification ----------------------------
@@ -428,6 +432,9 @@ print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters
 
 fileE = open('parametersEGPU.pkl', 'wb')
 pickle.dump(E_parameters, fileE)
+
+fileLAT = open('parametersLATGPU.pkl', 'wb')
+pickle.dump(LAT_parameters, fileLAT)
 
 # Plot models 
 if args.model_plot:
