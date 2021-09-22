@@ -30,14 +30,14 @@ parser.add_argument("-v", "--validation_plot", type = int, choices=[0, 1],
 		 default = 0)
 args = parser.parse_args()
 
-# Load previously generated dataset from DataGenMultivariateGPU.py
-file = open('datasetMultivariateGPU.pkl', 'rb')
+# Load previously generated dataset from DataGenMultivariateFPGA.py
+file = open('datasetMultivariateFPGA.pkl', 'rb')
 if not file:
-    sys.exit("No datasetMultivariateGPU.pkl file was found")
+    sys.exit("No datasetMultivariateFPGA.pkl file was found")
 else:
     dataset = pickle.load(file)
 if not dataset:
-    sys.exit("Data loaded was empty from datasetMultivariateGPU.pkl file")
+    sys.exit("Data loaded was empty from datasetMultivariateFPGA.pkl file")
 
 # Single Variable Weak Regressor/Learners definition
 # Function attributes
@@ -94,14 +94,9 @@ def ReciModel(x, a1, a0):
 @Name('Polynomial') 
 @ParameterNumber(4)
 def PolyModel(x, a3, a2, a1, a0):
-    return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
-    
+    return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0    
 
 # Error and Loss Metrics function definition
-# Least Square Error (LSE)
-def LSE(kpi, feature, Model, parameter):
-    return np.sum((kpi - Model(np.asarray(feature), *parameter)) ** 2)
-
 # Mean Absolute Percentage Error (MAPE)
 def MAPE(kpi, feature, Model, parameter):
     return np.absolute(np.sum((kpi - Model(np.asarray(feature), *parameter))/kpi))/len(kpi)
@@ -137,26 +132,28 @@ def autocorr(x):
 
 # ----------------- Weak Regressor System Identification ----------------------------
 # Max values of feature space
-k_max = 11
-N_max = 512
-WH_max = 100
-C_max = 512
+k_max = 5
+N_max = 10
+WH_max = 12
+C_max = 10
 # Defining constant and variable inputs for Dataset subsampling for 3D visualization
 # KPIs vs WH and C (filter size k and number of filters N are constant)
-k_const = 11
-N_const = 512
+k_const = 3
+N_const = 5
 WH_var, C_var, LAT_WHC, POW_WHC, E_WHC, T_WHC = [],[],[],[],[],[]
+ALM_WHC, ALUT_WHC, LAB_WHC, M20K_WHC = [],[],[],[]
 # KPIs vs k and N (Input tensor size WH_in and C_in are constant)
-WH_const = 100
-C_const = 512
+WH_const = 5
+C_const = 5
 k_var, N_var, LAT_kN, POW_kN, E_kN, T_kN = [],[],[],[],[],[]
+ALM_kN, ALUT_kN, LAB_kN, M20K_kN = [],[],[],[]
 # Ordered KPI names
-kpi_names = ['Latency', 'Power', 'Energy', 'Throughput']
+kpi_names = ['Latency', 'Power', 'Energy', 'Throughput', 'ALMs', 'ALUTs', 'LABs', 'M20Ks']
 # with units
-kpi_units = ['s', 'W', 'mJ', 'GB/s']
+kpi_units = ['ms', 'W', r'$\mu$J', 'GB/s', '#', '#', '#', '#']
 # Ordered feature names
 feature_names = ['Input Tensor Size', 'Input Tensor Depth', 'Kernel Size', 'Number of Kernel Filters']
-# with 
+# with symbols
 feature_symbol = ['HW', 'C', 'k', 'N']
 
 # Retrieving sample data from Dataset (sample = [WH, C, k, N, LAT, POW, E, T, R_ALM, R_ALUT, R_LAB, R_M20K])
@@ -164,20 +161,28 @@ for sample in dataset:
     if sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
         C_var.append(sample[1])
-        LAT_WHC.append(sample[4]/1000)
+        LAT_WHC.append(sample[4])
         POW_WHC.append(sample[5])
-        E_WHC.append(sample[6])
+        E_WHC.append(sample[6]*1000000) # in microJoules
         T_WHC.append(sample[7])
+        ALM_WHC.append(sample[8])
+        ALUT_WHC.append(sample[9])
+        LAB_WHC.append(sample[10])
+        M20K_WHC.append(sample[11])
     if sample[0] == WH_const and sample[1] == C_const:
         k_var.append(sample[2])
         N_var.append(sample[3])
-        LAT_kN.append(sample[4]/1000)
+        LAT_kN.append(sample[4])
         POW_kN.append(sample[5])
-        E_kN.append(sample[6]) 
+        E_kN.append(sample[6]*1000000) # in microJoules
         T_kN.append(sample[7])
+        ALM_kN.append(sample[8])
+        ALUT_kN.append(sample[9])
+        LAB_kN.append(sample[10])
+        M20K_kN.append(sample[11])
 
-kpi_WHC = [LAT_WHC, POW_WHC, E_WHC, T_WHC]        
-kpi_kN = [LAT_kN, POW_kN, E_kN, T_kN]
+kpi_WHC = [LAT_WHC, POW_WHC, E_WHC, T_WHC, ALM_WHC, ALUT_WHC, LAB_WHC, M20K_WHC]        
+kpi_kN = [LAT_kN, POW_kN, E_kN, T_kN, ALM_kN, ALUT_kN, LAB_kN, M20K_kN]
 # Plot subsampled dataset for 3D Visualization if data_plot is enabled
 if args.data_plot:
     for kpi_whc, kpi_kn, kpi_name, kpi_unit in zip(kpi_WHC, kpi_kN, kpi_names, kpi_units):
@@ -214,41 +219,65 @@ if args.data_plot:
         ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
         #ax.set_zlim(,)
 
+
 # Defining constant and variable inputs for Dataset subsampling for SI
 WH_var, LAT_WH, POW_WH, E_WH, T_WH = [],[],[],[],[]
+ALM_WH, ALUT_WH, LAB_WH, M20K_WH = [],[],[],[]
 C_var, LAT_C, POW_C, E_C, T_C = [],[],[],[],[]
+ALM_C, ALUT_C, LAB_C, M20K_C = [],[],[],[]
 k_var, LAT_k, POW_k, E_k, T_k = [],[],[],[],[]
+ALM_k, ALUT_k, LAB_k, M20K_k = [],[],[],[]
 N_var, LAT_N, POW_N, E_N, T_N = [],[],[],[],[]
+ALM_N, ALUT_N, LAB_N, M20K_N = [],[],[],[]
 
-# Retrieving sample data from Dataset for SI(sample = [WH, C, k, N, LAT, POW, E, T])
+
+# Retrieving sample data from Dataset for SI(sample = [WH, C, k, N, LAT, POW, E, T, R_ALM, R_ALUT, R_LAB, R_M20K])
 for sample in dataset:
     if  sample[1] == C_const and sample[2] == k_const and sample[3] == N_const:
         WH_var.append(sample[0])
         LAT_WH.append(sample[4])
         POW_WH.append(sample[5])
-        E_WH.append(sample[6])
+        E_WH.append(sample[6]*1000000)
         T_WH.append(sample[7])
+        ALM_WH.append(sample[8])
+        ALUT_WH.append(sample[9])
+        LAB_WH.append(sample[10])
+        M20K_WH.append(sample[11])
     if sample[0] == WH_const and sample[2] == k_const and sample[3] == N_const:
         C_var.append(sample[1])
         LAT_C.append(sample[4])
         POW_C.append(sample[5])
-        E_C.append(sample[6])
+        E_C.append(sample[6]*1000000)
         T_C.append(sample[7])
+        ALM_C.append(sample[8])
+        ALUT_C.append(sample[9])
+        LAB_C.append(sample[10])
+        M20K_C.append(sample[11])
     if sample[0] == WH_const and sample[1] == C_const and sample[3] == N_const:
         k_var.append(sample[2])
         LAT_k.append(sample[4])
         POW_k.append(sample[5])
-        E_k.append(sample[6])
+        E_k.append(sample[6]*1000000)
         T_k.append(sample[7])
+        ALM_k.append(sample[8])
+        ALUT_k.append(sample[9])
+        LAB_k.append(sample[10])
+        M20K_k.append(sample[11])
     if sample[0] == WH_const and sample[1] == C_const and sample[2] == k_const:
         N_var.append(sample[3])
         LAT_N.append(sample[4])
         POW_N.append(sample[5])
-        E_N.append(sample[6])
-        T_N.append(sample[7]) 
+        E_N.append(sample[6]*1000000)
+        T_N.append(sample[7])
+        ALM_N.append(sample[8])
+        ALUT_N.append(sample[9])
+        LAB_N.append(sample[10])
+        M20K_N.append(sample[11])
+        
         
 # Lists of KPIs per feature
-kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [E_WH, E_C, E_k, E_N], [T_WH, T_C, T_k, T_N]]
+kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [E_WH, E_C, E_k, E_N], [T_WH, T_C, T_k, T_N], \
+                [ALM_WH, ALM_C, ALM_k, ALM_N], [ALUT_WH, ALUT_C, ALUT_k, ALUT_N], [LAB_WH, LAB_C, LAB_k, LAB_N], [M20K_WH, M20K_C, M20K_k, M20K_N]]
 # List of features
 features = [WH_var, C_var, k_var, N_var]
 # Previously defined models
@@ -280,7 +309,7 @@ for kpis in kpis_variable:
             mapes.append(mape)
             # Computing cost with a LSE metric Loss and L2 regularization
             cost = L2Cost(nrmse, parameter, 0.1)
-            costs.append(cost)               
+            costs.append(cost)          
 
 # ----------------- Strong Regressor System Identification ----------------------------
 # Competitive selection by LSE with L2 regularization as Loss function
@@ -321,7 +350,8 @@ if args.result_plot:
             plt.figure()
             plt.plot(features[j], kpis_variable[i][j], 'go', label='data')
             for Model, config in zip(Models, configs):
-                plt.plot(features[j], Model(np.asarray(features[j]), *parameters[k]), config, label= Model.name + r': $NRMSE=%5.3f$' % nrmses[k] +  r', $Cost=%5.3f$' % costs[k])
+                order = np.argsort(features[j])
+                plt.plot(np.asarray(features[j])[order], Model(np.asarray(features[j])[order], *parameters[k]), config, label= Model.name + r': $NRMSE=%5.3f$' % nrmses[k] +  r', $Cost=%5.3f$' % costs[k])
                 k += 1
             plt.title(kpi_names[i] + ' vs ' + feature_names[j])
             plt.xlabel(feature_names[j] + ' (' + feature_symbol[j] + ')')
@@ -333,6 +363,7 @@ if args.result_plot:
 # Multivariate KPI sample initialization
 WH, C, K, N = [],[],[],[]
 LAT, POW, E, T = [],[],[],[]
+ALM, ALUT, LAB, M20K = [],[],[],[]
 
 # Retrieving KPI samples 
 for sample in dataset:
@@ -342,8 +373,12 @@ for sample in dataset:
     N.append(sample[3])
     LAT.append(sample[4])
     POW.append(sample[5])
-    E.append(sample[6])
+    E.append(sample[6]*1000000)
     T.append(sample[7])
+    ALM.append(sample[8])
+    ALUT.append(sample[9])
+    LAB.append(sample[10])
+    M20K.append(sample[11])
 
 # Reshaping data                
 featureData = np.array([WH, C, K, N])
@@ -406,6 +441,62 @@ def ThrAggModel(x ,*b):
     index4 = index3 + len(selectedParameters[15])
     N_model = selectedModels[15](x[3], *b[index3:index4])
     return HW_model * C_model * k_model * N_model
+    
+@Name('ALM Aggregation')
+@ParameterNumber(selectedModels[16].parameter_number+selectedModels[17].parameter_number + \
+                 selectedModels[18].parameter_number+selectedModels[19].parameter_number)
+def ALMAggModel(x ,*b):
+    index = len(selectedParameters[16])
+    HW_model = selectedModels[16](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[17])
+    C_model = selectedModels[17](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[18])
+    k_model = selectedModels[18](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[19])
+    N_model = selectedModels[19](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
+
+@Name('ALUT Aggregation')
+@ParameterNumber(selectedModels[20].parameter_number+selectedModels[21].parameter_number + \
+                 selectedModels[22].parameter_number+selectedModels[23].parameter_number)
+def ALUTAggModel(x ,*b):
+    index = len(selectedParameters[20])
+    HW_model = selectedModels[20](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[21])
+    C_model = selectedModels[21](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[22])
+    k_model = selectedModels[22](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[23])
+    N_model = selectedModels[23](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
+
+@Name('LAB Aggregation')
+@ParameterNumber(selectedModels[24].parameter_number+selectedModels[25].parameter_number + \
+                 selectedModels[26].parameter_number+selectedModels[27].parameter_number)
+def LABAggModel(x ,*b):
+    index = len(selectedParameters[24])
+    HW_model = selectedModels[24](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[25])
+    C_model = selectedModels[25](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[26])
+    k_model = selectedModels[26](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[27])
+    N_model = selectedModels[27](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
+    
+@Name('M20K Aggregation')
+@ParameterNumber(selectedModels[28].parameter_number+selectedModels[29].parameter_number + \
+                 selectedModels[30].parameter_number+selectedModels[31].parameter_number)
+def M20KAggModel(x ,*b):
+    index = len(selectedParameters[28])
+    HW_model = selectedModels[28](x[0], *b[0:index])
+    index2 = index + len(selectedParameters[29])
+    C_model = selectedModels[29](x[1], *b[index:index2])
+    index3 = index2 + len(selectedParameters[30])
+    k_model = selectedModels[30](x[2], *b[index2:index3])
+    index4 = index3 + len(selectedParameters[31])
+    N_model = selectedModels[31](x[3], *b[index3:index4])
+    return HW_model * C_model * k_model * N_model
 
 # Full Dataset identification 
 LAT_parameters, LAT_covariance = curve_fit(LatAggModel,
@@ -432,6 +523,30 @@ T_parameters, T_covariance = curve_fit(ThrAggModel,
                                        p0=np.concatenate(selectedParameters[12:16]),
                                        bounds=[np.zeros(ThrAggModel.parameter_number), np.inf*np.ones(ThrAggModel.parameter_number)],
                                        maxfev=1000)
+ALM_parameters, ALM_covariance = curve_fit(ALMAggModel,
+                                           featureData, 
+                                           ALM, 
+                                           p0=np.concatenate(selectedParameters[16:20]), 
+                                           bounds=[np.zeros(ALMAggModel.parameter_number), np.inf*np.ones(ALMAggModel.parameter_number)],
+                                           maxfev=1000)
+ALUT_parameters, ALUT_covariance = curve_fit(ALUTAggModel, 
+                                             featureData, 
+                                             ALUT, 
+                                             p0=np.concatenate(selectedParameters[20:24]),
+                                             bounds=[np.zeros(ALUTAggModel.parameter_number), np.inf*np.ones(ALUTAggModel.parameter_number)],
+                                             maxfev=1000)
+LAB_parameters, LAB_covariance = curve_fit(LABAggModel, 
+                                           featureData, 
+                                           LAB, 
+                                           p0=np.concatenate(selectedParameters[24:28]), 
+                                           bounds=[np.zeros(LABAggModel.parameter_number), np.inf*np.ones(LABAggModel.parameter_number)],
+                                           maxfev=1000)
+M20K_parameters, M20K_covariance = curve_fit(M20KAggModel,
+                                             featureData, 
+                                             M20K, 
+                                             p0=np.concatenate(selectedParameters[28:32]), 
+                                             bounds=[np.zeros(M20KAggModel.parameter_number), np.inf*np.ones(M20KAggModel.parameter_number)],
+                                             maxfev=1000)
 
 # Print Strong regressor parameters
 print('Strong regressor parameters:')
@@ -439,28 +554,36 @@ print('Latency parameters: ' + np.array2string(LAT_parameters))
 print('Power parameters: ' + np.array2string(POW_parameters))
 print('Energy parameters: ' + np.array2string(E_parameters))
 print('Throughput parameters: ' + np.array2string(T_parameters))
+print('ALM parameters: ' + np.array2string(ALM_parameters))
+print('ALUT parameters: ' + np.array2string(ALUT_parameters))
+print('LAB parameters: ' + np.array2string(LAB_parameters))
+print('M20K parameters: ' + np.array2string(M20K_parameters))
 
+# Show resulting NRMSE 
 # Show resulting NRMSE 
 print('Precision metrics:')
 print('Latency NRMSE: ' + str(NRMSE(LAT, featureData, LatAggModel, LAT_parameters)))
 print('Power NRMSE: ' + str(NRMSE(POW, featureData, PowAggModel, POW_parameters)))
 print('Energy NRMSE: ' + str(NRMSE(E, featureData, EneAggModel, E_parameters)))
 print('Throughput NRMSE: ' + str(NRMSE(T, featureData, ThrAggModel, T_parameters)))
-                
+print('ALM NRMSE: ' + str(NRMSE(ALM, featureData, ALMAggModel, ALM_parameters)))
+print('ALUT NRMSE: ' + str(NRMSE(ALUT, featureData, ALUTAggModel, ALUT_parameters)))
+print('LAB NRMSE: ' + str(NRMSE(LAB, featureData, LABAggModel, LAB_parameters)))
+print('M20K NRMSE: ' + str(NRMSE(M20K, featureData, M20KAggModel, M20K_parameters)))
 
-fileE = open('parametersEGPU.pkl', 'wb')
-pickle.dump(E_parameters, fileE)
-
-fileLAT = open('parametersLATGPU.pkl', 'wb')
+fileLAT = open('parametersLATFPGA.pkl', 'wb')
 pickle.dump(LAT_parameters, fileLAT)
+                
+fileE = open('parametersEFPGA.pkl', 'wb')
+pickle.dump(E_parameters, fileE)
 
 # Plot models 
 if args.model_plot:
-    strRegModels = [LatAggModel, PowAggModel, EneAggModel, ThrAggModel]
-    strParameters = [LAT_parameters, POW_parameters, E_parameters, T_parameters]
+    strRegModels = [LatAggModel, PowAggModel, EneAggModel, ThrAggModel, ALMAggModel, ALUTAggModel, LABAggModel, M20KAggModel]
+    strParameters = [LAT_parameters, POW_parameters, E_parameters, T_parameters, ALM_parameters, ALUT_parameters, LAB_parameters, M20K_parameters]
     for Model, parameters, kpi_name, kpi_unit in zip(strRegModels, strParameters, kpi_names, kpi_units):
-        WH_mod = np.arange(1, 100, 1)
-        C_mod = np.arange(1, 500, 1)
+        WH_mod = np.arange(1, 13, 1)
+        C_mod = np.arange(1, 11, 1)
         X, Y = np.meshgrid(WH_mod, C_mod)
         k_mod = k_const*np.ones_like(X)
         N_mod = N_const*np.ones_like(Y)
@@ -475,8 +598,8 @@ if args.model_plot:
         #ax.set_ylim(,)
         ax.set_zlabel(kpi_name + ' (' + kpi_unit + ')')
                                
-        k_mod = np.arange(1, 11, 1)
-        N_mod = np.arange(1, 500, 1)
+        k_mod = np.arange(1, 6, 1)
+        N_mod = np.arange(1, 11, 1)
         X, Y = np.meshgrid(k_mod, N_mod)
         WH_mod = WH_const*np.ones_like(X)
         C_mod = C_const*np.ones_like(Y)
@@ -521,10 +644,10 @@ if args.validation_plot:
             # Split for validation data
             validationData = shuffledData[:,np.arange(i*foldSize,i*foldSize+foldSize,dtype=int)]
             # Identification over training Dataset
-            LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], p0=np.concatenate(selectedParameters[0:4]), maxfev=1000)
-            POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], p0=np.concatenate(selectedParameters[4:8]), maxfev=1000)
-            E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], p0=np.concatenate(selectedParameters[8:12]), maxfev=1000)
-            T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], p0=np.concatenate(selectedParameters[12:16]), maxfev=1000)
+            LAT_parameters, LAT_covariance = curve_fit(LatAggModel, trainData[:4,:], trainData[4,:], maxfev=1000)
+            POW_parameters, POW_covariance = curve_fit(PowAggModel, trainData[:4,:], trainData[5,:], maxfev=1000)
+            E_parameters, E_covariance = curve_fit(EneAggModel, trainData[:4,:], trainData[6,:], maxfev=1000)
+            T_parameters, T_covariance = curve_fit(ThrAggModel, trainData[:4,:], trainData[7,:], maxfev=1000)
             # Compute resulting NRMSE on validation Dataset fold
             distNMRSE.append(NRMSE(validationData[6,:], validationData[:4,:], EneAggModel, E_parameters))
             avLAT_NMRSE += NRMSE(validationData[4,:], validationData[:4,:], LatAggModel, LAT_parameters)
@@ -535,7 +658,7 @@ if args.validation_plot:
             parameterDistLAT.append(np.concatenate((LAT_parameters[0]*selectedParameters[0], \
                                     LAT_parameters[1]*selectedParameters[1], \
                                     LAT_parameters[2]*selectedParameters[2], \
-                                    LAT_parameters[3]*selectedParameters[3])))                                   
+                                    LAT_parameters[3]*selectedParameters[3])))
             parameterDistE.append(np.concatenate((E_parameters[0]*selectedParameters[8], \
                                     E_parameters[1]*selectedParameters[9], \
                                     E_parameters[2]*selectedParameters[10], \
@@ -618,7 +741,6 @@ if args.validation_plot:
     plt.violinplot(normdistLATarray,showmeans=False,showmedians=True,showextrema=True)
     plt.title('Parameter distribution for Latency model')
     plt.xlabel('Parameters')
-    plt.xticks(np.arange(13), ('' , 'a11', 'a10', 'a9', 'a8','a7', 'a6', 'a5', 'a4', 'a3','a2', 'a1', 'a0'))
     plt.figure()
     plt.boxplot(distLATarray, 0, '')
     plt.title('Parameter distribution for Latency model')
@@ -629,7 +751,6 @@ if args.validation_plot:
     plt.violinplot(normdistEarray,showmeans=False,showmedians=True,showextrema=True)
     plt.title('Parameter distribution for Energy model')
     plt.xlabel('Parameters')
-    plt.xticks(np.arange(15), ('', 'a13', 'a12' , 'a11', 'a10', 'a9', 'a8','a7', 'a6', 'a5', 'a4', 'a3','a2', 'a1', 'a0'))
     plt.figure()
     plt.boxplot(distEarray, 0, '')
     plt.title('Parameter distribution for Energy model')
