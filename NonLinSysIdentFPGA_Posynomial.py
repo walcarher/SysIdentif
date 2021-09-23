@@ -299,16 +299,16 @@ for kpis in kpis_variable:
                                               feature,
                                               kpi,
                                               bounds=[np.zeros(Model.parameter_number), np.inf*np.ones(Model.parameter_number)],
-                                              maxfev=10000)
+                                              maxfev=1000)
             parameters.append(parameter)
             # Computing RMSE
-            nrmse = NRMSE(kpi, feature, Model, parameter)
+            nrmse = RMSE(kpi, feature, Model, parameter)
             nrmses.append(nrmse)
             # Computing MAPE
             mape = MAPE(kpi, feature, Model, parameter)
             mapes.append(mape)
             # Computing cost with a LSE metric Loss and L2 regularization
-            cost = L2Cost(nrmse, parameter, 0.1)
+            cost = L2Cost(nrmse, parameter, 1000)
             costs.append(cost)          
 
 # ----------------- Strong Regressor System Identification ----------------------------

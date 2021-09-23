@@ -60,7 +60,7 @@ def ReciModel(x, a1, a0):
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
     
-# GPU Energy KPI estimation function from previous SI parameters
+# GPU Latency KPI estimation function from previous SI parameters
 def LatencyGPU(x ,*b):
     HW_model = QuadModel(x[0],b[0],b[1],b[2])
     C_model = PolyModel(x[1],b[3],b[4],b[5],b[6])
@@ -68,35 +68,81 @@ def LatencyGPU(x ,*b):
     N_model = QuadModel(x[3],b[10],b[11],b[12])
     return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)     
 
+# FPGA Latency KPI estimation function from previous SI parameters
+def LatencyFPGA(x ,*b):
+    HW_model = QuadModel(x[0],b[0],b[1],b[2])
+    C_model = QuadModel(x[1],b[3],b[4],b[5])
+    k_model = LinModel(x[2],b[6],b[7])
+    N_model = QuadModel(x[3],b[8],b[9],b[10])
+    return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)     
+
+
 file = open('parametersLATGPU.pkl', 'rb')
 if not file:
     sys.exit("No parametersLATGPU.pkl file was found")
 else:
     parametersLATGPU = pickle.load(file)
+    
+file = open('parametersLATFPGA.pkl', 'rb')
+if not file:
+    sys.exit("No parametersLATFPGA.pkl file was found")
+else:
+    parametersLATFPGA = pickle.load(file)
 
 # Construct the problem.
-HW = cp.Variable(1, pos = True, name = "HW")
-C = cp.Variable(1, pos = True, name = "C")
-k = cp.Variable(1, pos = True, name = "k")
-N = cp.Variable(1, pos = True, name = "N")
+# Variable tensors dimensions per device
+# GPU variables
+HW_G = cp.Variable(pos = True, name = "HW_G")
+C_G = cp.Variable(pos = True, name = "C_G")
+k_G = cp.Variable(pos = True, name = "k_G")
+N_G = cp.Variable(pos = True, name = "N_G")
+# FPGA variables
+HW_F = cp.Variable(pos = True, name = "HW_F")
+C_F = cp.Variable(pos = True, name = "C_F")
+k_F = cp.Variable(pos = True, name = "k_F")
+N_F = cp.Variable(pos = True, name = "N_F")
+# FPGA constant constrains (For C10GX: 10CX220YF780E5G)
+ALM_MAX = cp.Constant(80330) # Max number of Arithmetic Logic Modules
+#ALUT_MAX = cp.Constant(name = "ALUT_MAX") # Max number of Adaptive Look-Up Table - Overlaps with ALMs
+LAB_MAX = cp.Constant(8033) # Max number of Memory Logic Array Block
+M20K_MAX = cp.Constant(587) # Max number of Memory M20K blocks
+# Tensor to be partitionned  (Example 224x224x3 with 32 filters of size 3x3)
+HW = cp.Constant(224)
+C = cp.Constant(3)
+k = cp.Constant(1)
+N = cp.Constant(32)
+# Device parameters/coefficients
 constantsGPU = cp.Constant(parametersLATGPU)
-# Print strong regressor model parameters on each device
+constantsFPGA = cp.Constant(parametersLATFPGA)
+# Print strong regresor model parameters on each device
 print("GPU Parameters : ", constantsGPU)
-objective_fn = LatencyGPU([HW, C, k, N], *constantsGPU)
-#objective_fn = LatencyGPUtest([HW, C, k, N], constant0, constant1, constant2, constant3,
-#                                             constant4, constant5, constant6, constant7)
+print("FPGA Parameters : ", constantsFPGA)
+# Heterogeneous objective function (Lateny in ms)
+objective_fn = 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
+               LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)
 # Constraints definition                                         
-constraints = [HW >= 1, C >= 1, k >= 1, N >= 1, 
-               HW <= 50, C <= 100, k <= 11, N <= 50]
+constraints = [HW_G>=1,C_G>=1,k_G>=1,N_G>=1,HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
+               HW_G == HW,
+               HW_F == HW,
+               k_G == k,
+               k_F == k,
+               N_G == N,
+               N_F == N,
+               C_G + C_F <= C # ERROR: this is not a monomial. GP is not possible
+               ]
+               #HW_G + HW_F == HW,
+               #C_G + C_F == C,
+               #k_G + k_F == k,
+               #N_G + N_F == N]
 #assert objective_fn.is_log_log_convex()
 #assert all(constraint.is_dgp() for constraint in constraints)
 objective = cp.Minimize(objective_fn)
 prob = cp.Problem(objective, constraints)
 # The optimal objective value is returned by `prob.solve()`.
-if objective.is_dgp() == True:
+if prob.is_dgp() == True:
     print("Using GP")
     result = prob.solve(gp=True)
-elif objective.is_dcp() == True:
+elif prob.is_dcp() == True:
     print("Using CP")
     result = prob.solve()
 else:
@@ -110,10 +156,15 @@ else:
 # The optimal value for x is stored in `x.value`.
 print("Solution found: ", prob.value)
 print("Solver used: ", prob.solver_stats.solver_name)
-print("Value for", HW, "feature: ", HW.value)
-print("Value for", C, "feature: ", C.value)
-print("Value for", k, "feature: ", k.value)
-print("Value for", N, "feature: ", N.value)
+print("GPU feature values")
+print("Value for", HW_G, "feature: ", HW_G.value)
+print("Value for", C_G, "feature: ", C_G.value)
+print("Value for", k_G, "feature: ", k_G.value)
+print("Value for", N_G, "feature: ", N_G.value)
+print("Value for", HW_F, "feature: ", HW_F.value)
+print("Value for", C_F, "feature: ", C_F.value)
+print("Value for", k_F, "feature: ", k_F.value)
+print("Value for", N_F, "feature: ", N_F.value)
 # The optimal Lagrange multiplier for a constraint is stored in
 # `constraint.dual_value`.
 #print(constraints[0].dual_value)
