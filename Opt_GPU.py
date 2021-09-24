@@ -134,8 +134,6 @@ constraints = [HW_G>=1,C_G>=1,k_G>=1,N_G>=1,HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
                #C_G + C_F == C,
                #k_G + k_F == k,
                #N_G + N_F == N]
-#assert objective_fn.is_log_log_convex()
-#assert all(constraint.is_dgp() for constraint in constraints)
 objective = cp.Minimize(objective_fn)
 prob = cp.Problem(objective, constraints)
 # The optimal objective value is returned by `prob.solve()`.
@@ -157,14 +155,14 @@ else:
 print("Solution found: ", prob.value)
 print("Solver used: ", prob.solver_stats.solver_name)
 print("GPU feature values")
-print("Value for", HW_G, "feature: ", HW_G.value)
-print("Value for", C_G, "feature: ", C_G.value)
-print("Value for", k_G, "feature: ", k_G.value)
-print("Value for", N_G, "feature: ", N_G.value)
-print("Value for", HW_F, "feature: ", HW_F.value)
-print("Value for", C_F, "feature: ", C_F.value)
-print("Value for", k_F, "feature: ", k_F.value)
-print("Value for", N_F, "feature: ", N_F.value)
+print("Value for", HW_G, "feature: ", np.rint(HW_G.value))
+print("Value for", C_G, "feature: ", np.rint(C_G.value))
+print("Value for", k_G, "feature: ", np.rint(k_G.value))
+print("Value for", N_G, "feature: ",np.rint(N_G.value))
+print("Value for", HW_F, "feature: ", np.rint(HW_F.value))
+print("Value for", C_F, "feature: ", np.rint(C_F.value))
+print("Value for", k_F, "feature: ", np.rint(k_F.value))
+print("Value for", N_F, "feature: ", np.rint(N_F.value))
 # The optimal Lagrange multiplier for a constraint is stored in
 # `constraint.dual_value`.
 #print(constraints[0].dual_value)
