@@ -91,12 +91,12 @@ else:
 
 # Construct the problem.
 # Variable tensors dimensions per device
-# GPU variables
+# GPU variables X_G
 HW_G = cp.Variable(pos = True, name = "HW_G")
 C_G = cp.Variable(pos = True, name = "C_G")
 k_G = cp.Variable(pos = True, name = "k_G")
 N_G = cp.Variable(pos = True, name = "N_G")
-# FPGA variables
+# FPGA variables X_F
 HW_F = cp.Variable(pos = True, name = "HW_F")
 C_F = cp.Variable(pos = True, name = "C_F")
 k_F = cp.Variable(pos = True, name = "k_F")
@@ -107,8 +107,8 @@ ALM_MAX = cp.Constant(80330) # Max number of Arithmetic Logic Modules
 LAB_MAX = cp.Constant(8033) # Max number of Memory Logic Array Block
 M20K_MAX = cp.Constant(587) # Max number of Memory M20K blocks
 # Tensor to be partitionned  (Example 224x224x3 with 32 filters of size 3x3)
-HW = cp.Constant(224)
-C = cp.Constant(3)
+HW = cp.Constant(112)
+C = cp.Constant(16)
 k = cp.Constant(1)
 N = cp.Constant(32)
 # Device parameters/coefficients
@@ -117,6 +117,14 @@ constantsFPGA = cp.Constant(parametersLATFPGA)
 # Print strong regresor model parameters on each device
 print("GPU Parameters : ", constantsGPU)
 print("FPGA Parameters : ", constantsFPGA)
+expression0 = C_G
+expression1 = C_F
+expression2 = C_G+C_F
+expression3 = C
+print(expression0.is_log_log_affine())
+print(expression1.is_log_log_affine())
+print(expression2.is_log_log_affine())
+print(expression3.is_log_log_affine())
 # Heterogeneous objective function (Lateny in ms)
 objective_fn = 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
                LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)
@@ -128,12 +136,14 @@ constraints = [HW_G>=1,C_G>=1,k_G>=1,N_G>=1,HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
                k_F == k,
                N_G == N,
                N_F == N,
-               C_G + C_F <= C # ERROR: this is not a monomial. GP is not possible
+               C_G*C_F == C # ERROR: this is not a monomial. GP is not possible
                ]
                #HW_G + HW_F == HW,
                #C_G + C_F == C,
                #k_G + k_F == k,
                #N_G + N_F == N]
+#assert(objective_fn.is_log_log_convex())
+#assert all (constraint.is_dgp() for constraint in constraints)
 objective = cp.Minimize(objective_fn)
 prob = cp.Problem(objective, constraints)
 # The optimal objective value is returned by `prob.solve()`.
@@ -144,7 +154,7 @@ elif prob.is_dcp() == True:
     print("Using CP")
     result = prob.solve()
 else:
-    print("Problem is non-convex")
+    print("Problem is Non-Convex")
     try:
         prob.solve()
     except cp.DCPError as e:
