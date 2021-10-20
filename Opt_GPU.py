@@ -117,14 +117,8 @@ constantsFPGA = cp.Constant(parametersLATFPGA)
 # Print strong regresor model parameters on each device
 print("GPU Parameters : ", constantsGPU)
 print("FPGA Parameters : ", constantsFPGA)
-expression0 = C_G
-expression1 = C_F
-expression2 = C_G+C_F
-expression3 = C
-print(expression0.is_log_log_affine())
-print(expression1.is_log_log_affine())
-print(expression2.is_log_log_affine())
-print(expression3.is_log_log_affine())
+expression = cp.sqrt(C_G+C_F)
+print(expression.is_log_log_affine())
 # Heterogeneous objective function (Lateny in ms)
 objective_fn = 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
                LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)
@@ -136,7 +130,8 @@ constraints = [HW_G>=1,C_G>=1,k_G>=1,N_G>=1,HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
                k_F == k,
                N_G == N,
                N_F == N,
-               C_G*C_F == C # ERROR: this is not a monomial. GP is not possible
+               C_G <= C,
+               C_F <= C, # ERROR: this is not a monomial. GP is not possible
                ]
                #HW_G + HW_F == HW,
                #C_G + C_F == C,
