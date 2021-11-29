@@ -281,7 +281,8 @@ kpis_variable = [[LAT_WH, LAT_C, LAT_k, LAT_N], [POW_WH, POW_C, POW_k, POW_N], [
 # List of features
 features = [WH_var, C_var, k_var, N_var]
 # Previously defined models
-Models = [LinModel, QuadModel, LogModel, ExpModel, ReciModel, PolyModel]
+#Models = [LinModel, QuadModel, LogModel, ExpModel, ReciModel, PolyModel]
+Models = [LinModel, QuadModel, ExpModel, ReciModel, PolyModel]
 # Obtained optimal parameters 
 parameters = []
 # Obtained RMSE
@@ -576,6 +577,18 @@ pickle.dump(LAT_parameters, fileLAT)
                 
 fileE = open('parametersEFPGA.pkl', 'wb')
 pickle.dump(E_parameters, fileE)
+
+fileALM = open('parametersALMFPGA.pkl', 'wb')
+pickle.dump(ALM_parameters, fileALM)
+
+fileALUT = open('parametersALUTFPGA.pkl', 'wb')
+pickle.dump(ALUT_parameters, fileALUT)
+
+fileLAB = open('parametersLABFPGA.pkl', 'wb')
+pickle.dump(LAB_parameters, fileLAB)
+
+fileM20K = open('parametersM20KFPGA.pkl', 'wb')
+pickle.dump(M20K_parameters, fileM20K)
 
 # Plot models 
 if args.model_plot:

@@ -41,7 +41,7 @@ def QuadModel(x, a2, a1, a0):
 @Name('Logarithmic')  
 @ParameterNumber(2)
 def LogModel(x, a1, a0):
-    return a1*np.log(x) + a0
+    return a1*cp.log(x) + a0
     
 # Exponential model   
 @Name('Exponential') 
@@ -60,9 +60,10 @@ def ReciModel(x, a1, a0):
 @ParameterNumber(4)
 def PolyModel(x, a3, a2, a1, a0):
     return a3*np.power(x, 3) + a2*np.power(x, 2) + a1*x + a0
-    
+
+# Flydels    
 # GPU Latency KPI estimation function from previous SI parameters
-def LatencyGPU(x ,*b):
+def LatencyGPU(x, *b):
     HW_model = QuadModel(x[0],b[0],b[1],b[2])
     C_model = PolyModel(x[1],b[3],b[4],b[5],b[6])
     k_model = QuadModel(x[2],b[7],b[8],b[9])
@@ -70,13 +71,41 @@ def LatencyGPU(x ,*b):
     return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)     
 
 # FPGA Latency KPI estimation function from previous SI parameters
-def LatencyFPGA(x ,*b):
+def LatencyFPGA(x, *b):
     HW_model = QuadModel(x[0],b[0],b[1],b[2])
     C_model = QuadModel(x[1],b[3],b[4],b[5])
     k_model = LinModel(x[2],b[6],b[7])
     N_model = QuadModel(x[3],b[8],b[9],b[10])
     return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)     
 
+# Resources
+def ALM_FPGA(x, *b):
+    HW_model = LinModel(x[0],b[0],b[1])
+    C_model = PolyModel(x[1],b[2],b[3],b[4],b[5])
+    k_model = PolyModel(x[2],b[6],b[7],b[8],b[9])
+    N_model = QuadModel(x[3],b[10],b[11],b[12])
+    return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)
+    
+def ALUT_FPGA(x, *b):
+    HW_model = LinModel(x[0],b[0],b[1])
+    C_model = PolyModel(x[1],b[2],b[3],b[4],b[5])
+    k_model = PolyModel(x[2],b[6],b[7],b[8],b[9])
+    N_model = PolyModel(x[3],b[10],b[11],b[12],b[13])
+    return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)
+    
+def LAB_FPGA(x, *b):
+    HW_model = LinModel(x[0],b[0],b[1])
+    C_model = QuadModel(x[1],b[2],b[3],b[4])
+    k_model = PolyModel(x[2],b[5],b[6],b[7],b[8])
+    N_model = PolyModel(x[3],b[9],b[10],b[11],b[12])
+    return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)
+    
+def M20K_FPGA(x, *b):
+    HW_model = LinModel(x[0],b[0],b[1])
+    C_model = QuadModel(x[1],b[2],b[3],b[4])
+    k_model = PolyModel(x[2],b[5],b[6],b[7],b[8])
+    N_model = QuadModel(x[3],b[9],b[10],b[11])
+    return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)
 
 file = open('parametersLATGPU.pkl', 'rb')
 if not file:
@@ -89,6 +118,30 @@ if not file:
     sys.exit("No parametersLATFPGA.pkl file was found")
 else:
     parametersLATFPGA = pickle.load(file)
+    
+file = open('parametersALMFPGA.pkl', 'rb')
+if not file:
+    sys.exit("No parametersALMFPGA.pkl file was found")
+else:
+    parametersALMFPGA = pickle.load(file)
+    
+file = open('parametersALUTFPGA.pkl', 'rb')
+if not file:
+    sys.exit("No parametersALUTFPGA.pkl file was found")
+else:
+    parametersALUTFPGA = pickle.load(file)
+    
+file = open('parametersLABFPGA.pkl', 'rb')
+if not file:
+    sys.exit("No parametersLABFPGA.pkl file was found")
+else:
+    parametersLABFPGA = pickle.load(file)
+    
+file = open('parametersM20KFPGA.pkl', 'rb')
+if not file:
+    sys.exit("No parametersM20KFPGA.pkl file was found")
+else:
+    parametersM20KFPGA = pickle.load(file)
 
 # Construct the problem.
 # Variable tensors dimensions per device
@@ -117,9 +170,15 @@ C_G_h = cp.Constant(8)
 # Device parameters/coefficients
 constantsGPU = cp.Constant(parametersLATGPU)
 constantsFPGA = cp.Constant(parametersLATFPGA)
+# Device resources 
+constantsALM = cp.Constant(parametersALMFPGA)
+constantsALUT = cp.Constant(parametersALUTFPGA)
+constantsLAB = cp.Constant(parametersLABFPGA)
+constantsM20K = cp.Constant(parametersM20KFPGA)
+expression = ALM_FPGA([HW_F, C_F, k_F, N_F], *constantsALM)
 # Print strong regresor model parameters on each device
-print("GPU Parameters : ", constantsGPU)
-print("FPGA Parameters : ", constantsFPGA)
+print("GPU Latency Parameters : ", constantsGPU)
+print("FPGA Latency Parameters : ", constantsFPGA)
 # Constraints definition                                         
 constraints = [HW_G>=1,C_G>=1,k_G>=1,N_G>=1,HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
                HW_G == HW,
@@ -128,7 +187,11 @@ constraints = [HW_G>=1,C_G>=1,k_G>=1,N_G>=1,HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
                k_F == k,
                N_G == N,
                N_F == N,
-               # Testing different constraints
+               # Resources constraints
+               ALM_FPGA([HW_F, C_F, k_F, N_F], *constantsALM) <= ALM_MAX,
+               LAB_FPGA([HW_F, C_F, k_F, N_F], *constantsLAB) <= LAB_MAX,
+               M20K_FPGA([HW_F, C_F, k_F, N_F], *constantsM20K) <= M20K_MAX,
+               # Relaxed constraints
                (C_G+C_F)/C <= 1, # Relaxation from C_F + C_G == C
                ]
 # Sweep over different W_k weight values
@@ -143,12 +206,12 @@ for w in range(1,max,steps):
     condensation1 = cp.power(C_F/C/(C_F_h/(C_F_h+C_G_h)),exponent1.value)
     condensation2 = cp.power(C_G/C/(C_G_h/(C_F_h+C_G_h)),exponent2.value)
     penalization = 1 / (condensation1*condensation2)
-    # Heterogeneous objective function (Lateny in ms)
-    objective_fn = 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
-                   LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
-                   W*penalization
-    # objective_fn = cp.maximum(1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU), LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
+    # Heterogeneous objective function (Lateny in ms) (Sequential = addition) (Concurrent = max function)
+    # objective_fn = 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
+                   # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
                    # W*penalization
+    objective_fn = cp.maximum(1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU), LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
+                   W*penalization
                    
     #assert(objective_fn.is_log_log_convex())
     #assert all (constraint.is_dgp() for constraint in constraints)
