@@ -222,7 +222,7 @@ constraints = [HW_C>=1,C_C>=1,k_C>=1,N_C>=1,
                (C_C+C_G+C_F)/C <= 1, # Relaxation from C_C + C_F + C_G == C
                ]
 # Sweep over different W_k weight values
-max = 350
+max = 1000
 steps = 10
 C_C_list, C_G_list, C_F_list, eq_const_list, obj_results = [], [], [], [], []
 for w in range(1,max,steps):
@@ -235,16 +235,16 @@ for w in range(1,max,steps):
     condensation1 = cp.power(C_F/C/(C_F_h/(C_C_h+C_F_h+C_G_h)),exponent1.value)
     condensation2 = cp.power(C_G/C/(C_G_h/(C_C_h+C_F_h+C_G_h)),exponent2.value)
     penalization = 1 / (condensation0*condensation1*condensation2)
-    # Heterogeneous objective function (Lateny in ms) (Sequential = addition) (Concurrent = max function)
+    # Heterogeneous objective function (Lateny in ms) (Sequential => addition) (Concurrent => max function)
     objective_fn = 1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU) + \
                    1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
                    LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
                    W*penalization
-    # objective_fn = cp.maximum(1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU), LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
+    # objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
+                              # 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
+                              # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
                    # W*penalization
-                   
-    #assert(objective_fn.is_log_log_convex())
-    #assert all (constraint.is_dgp() for constraint in constraints)
+    # Minimize convex objective function                
     objective = cp.Minimize(objective_fn)
     prob = cp.Problem(objective, constraints)
     # The optimal objective value is returned by `prob.solve()`.
