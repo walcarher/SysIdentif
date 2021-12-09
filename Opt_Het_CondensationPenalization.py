@@ -222,11 +222,15 @@ constraints = [HW_C>=1,C_C>=1,k_C>=1,N_C>=1,
                (C_C+C_G+C_F)/C <= 1, # Relaxation from C_C + C_F + C_G == C
                ]
 # Sweep over different W_k weight values
-max = 1000
-steps = 10
+w = 0
+steps = 0
+step_size = 10
 C_C_list, C_G_list, C_F_list, eq_const_list, obj_results = [], [], [], [], []
-for w in range(1,max,steps):
+last_eq_value = 0.0
+while last_eq_value <= 0.99:
     # Forming penalization term
+    steps = steps + 1
+    w = w + step_size
     W = cp.Constant(w)
     exponent0 = C_C_h/(C_C_h+C_F_h+C_G_h)
     exponent1 = C_F_h/(C_C_h+C_F_h+C_G_h)
@@ -268,8 +272,9 @@ for w in range(1,max,steps):
     C_C_list.append(np.rint(C_C.value))
     C_F_list.append(np.rint(C_F.value))
     C_G_list.append(np.rint(C_G.value))
-    #eq_const_list.append((np.rint(C_C.value)+np.rint(C_F.value)+np.rint(C_G.value))/C.value)
-    eq_const_list.append((C_C.value+C_F.value+C_G.value)/C.value)
+    #last_eq_value = (np.rint(C_C.value)+np.rint(C_F.value)+np.rint(C_G.value))/C.value
+    last_eq_value = (C_C.value+C_F.value+C_G.value)/C.value
+    eq_const_list.append(last_eq_value)
     obj_results.append(opt_val-W.value*penalization.value)
 
 print("Solution found: ", opt_val)
@@ -294,8 +299,8 @@ print("Value for", N_F, "feature: ", np.rint(N_F.value))
 #print(constraints[0].dual_value)
 
 # Plot results
-width = 0.75*steps
-x = np.linspace(1, max, len(eq_const_list))
+width = 1.75*step_size/steps
+x = np.linspace(1, steps, len(eq_const_list))
 y = np.asarray(eq_const_list)
 fig, ax = plt.subplots()
 rects0 = ax.bar(x, np.asarray(C_C_list), width, label='CPU ' r'($C_C$)', color = 'tomato', bottom = (np.asarray(C_F_list)+np.asarray(C_G_list)))
