@@ -258,8 +258,8 @@ if args.result_plot:
 # print('Precision metrics:')
 # print('Latency NRMSE: ' + str(NRMSE(LAT, featureData, LatAggModel, LAT_parameters)))
 
-# fileLAT = open('parametersLATCOMM.pkl', 'wb')
-# pickle.dump(LAT_parameters, fileLAT)
+fileLAT = open('parametersLATCOMM.pkl', 'wb')
+pickle.dump(selectedParameter, fileLAT)
                 
  
 plt.show()

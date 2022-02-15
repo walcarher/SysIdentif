@@ -116,6 +116,9 @@ def M20K_FPGA(x, *b):
     N_model = QuadModel(x[3],b[9],b[10],b[11])
     return cp.multiply(cp.multiply(cp.multiply(HW_model, C_model), k_model), N_model)
 
+def LatencyGPUFPGA_COMM(x, *b):
+    return LinModel(x[0],b[0],b[1])
+
 file = open('parametersLATCPU.pkl', 'rb')
 if not file:
     sys.exit("No parametersLATCPU.pkl file was found")
@@ -158,6 +161,12 @@ if not file:
 else:
     parametersM20KFPGA = pickle.load(file)
 
+file = open('parametersLATCOMM.pkl', 'rb')
+if not file:
+    sys.exit("No parametersLATCOMM.pkl file was found")
+else:
+    parametersLATCOMM = pickle.load(file)
+
 # Define the problem.
 # Variable tensors dimensions per device
 # CPU variables X_C
@@ -175,6 +184,9 @@ HW_F = cp.Variable(pos = True, name = "HW_F")
 C_F = cp.Variable(pos = True, name = "C_F")
 k_F = cp.Variable(pos = True, name = "k_F")
 N_F = cp.Variable(pos = True, name = "N_F")
+x = cp.Variable(pos = True, name = "X")
+sigmoid = 1/(1+cp.exp(x))
+print(sigmoid.is_dcp())
 # FPGA constant constrains (For C10GX: 10CX220YF780E5G)
 ALM_MAX = cp.Constant(80330) # Max number of Arithmetic Logic Modules
 #ALUT_MAX = cp.Constant(name = "ALUT_MAX") # Max number of Adaptive Look-Up Table - Overlaps with ALMs
@@ -197,10 +209,13 @@ constantsALM = cp.Constant(parametersALMFPGA)
 constantsALUT = cp.Constant(parametersALUTFPGA)
 constantsLAB = cp.Constant(parametersLABFPGA)
 constantsM20K = cp.Constant(parametersM20KFPGA)
+# GPU-FPGA Communication parameters/coefficients
+constantsGPUFPGACOMM = cp.Constant(parametersLATCOMM)
 # Print strong regresor model parameters on each device
 print("CPU Latency Parameters : ", constantsCPU)
 print("GPU Latency Parameters : ", constantsGPU)
 print("FPGA Latency Parameters : ", constantsFPGA)
+print("GPU-FPGA Latency Parameters : ", constantsGPUFPGACOMM)
 # Constraints definition                                         
 constraints = [HW_C>=1,C_C>=1,k_C>=1,N_C>=1,
                HW_G>=1,C_G>=1,k_G>=1,N_G>=1,
@@ -243,6 +258,7 @@ while last_eq_value <= 0.99:
     objective_fn = 1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU) + \
                    1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
                    LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
+                   LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM) + \
                    W*penalization
     # objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
                               # 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
