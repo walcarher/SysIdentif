@@ -185,8 +185,9 @@ C_F = cp.Variable(pos = True, name = "C_F")
 k_F = cp.Variable(pos = True, name = "k_F")
 N_F = cp.Variable(pos = True, name = "N_F")
 x = cp.Variable(pos = True, name = "X")
-sigmoid = 1/(1+cp.exp(x))
-print(sigmoid.is_dcp())
+alg = x**100 
+print(alg.is_dcp())
+print(alg.is_dgp())
 # FPGA constant constrains (For C10GX: 10CX220YF780E5G)
 ALM_MAX = cp.Constant(80330) # Max number of Arithmetic Logic Modules
 #ALUT_MAX = cp.Constant(name = "ALUT_MAX") # Max number of Adaptive Look-Up Table - Overlaps with ALMs
