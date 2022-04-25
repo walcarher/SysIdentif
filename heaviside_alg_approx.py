@@ -28,7 +28,7 @@ e_100 = np.linalg.norm(h - y_100)
 
 fig, ax = plt.subplots()
 ax.set_title('Communication Weight Function')
-ax.plot(x,h,'-',color='black',linewidth=2,label= r'$H(x)$')
+ax.plot(x,h,'-',color='red',linewidth=2,label= r'$H(x)$')
 plt.annotate(r'y=x', xy=(x[45],y[50]), rotation=40)
 ax.plot(x,y,'--',color='black',linewidth=2,label= r'$y=x$')
 plt.annotate(r'k=0', xy=(x[50],y_0[50]), rotation=0)
