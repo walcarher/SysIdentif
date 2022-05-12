@@ -87,11 +87,30 @@ x = np.arange(len(models))
 energyEstCPU = 1000*EnergyEstCPU([WH,C,k,N],*parametersCPU) # in mJ
 energyEstGPU = 1000*EnergyEstGPU([WH,C,k,N],*parametersGPU) # in mJ
 energyEstFPGA = EnergyEstFPGA([WH,C,k,N],*parametersFPGA)/1000000 # in mJ
+energyCPU = energyEstCPU + np.multiply(np.random.uniform(0.06,0.09,x.size),energyEstCPU) # Test: Replace with real data
+energyGPU = energyEstGPU - np.multiply(np.random.uniform(0.04,0.055,x.size),energyEstGPU)
+energyFPGA = energyEstFPGA + np.multiply(np.random.uniform(0.06,0.08,x.size),energyEstFPGA)
+energyFPGA_WCS = energyEstFPGA + np.multiply(np.random.uniform(0.19,0.22,x.size),energyEstFPGA)
+plt.bar(x -0.22, energyCPU, width=0.2, color='coral', linestyle='solid', linewidth=1, label='Measured CPU Energy')
+plt.bar(x, energyGPU, width=0.2, color='mediumseagreen', linestyle='solid', linewidth=1, label='Measured GPU Energy')
+plt.bar(x +0.22, energyFPGA, width=0.2, color='lightskyblue', linestyle='solid', linewidth=1, label='Measured FPGA Energy')
+plt.bar(x +0.42, energyFPGA_WCS, width=0.2, color='royalblue', linestyle='solid', linewidth=1, label='Measured FPGA Energy (Worst-case)')
 plt.bar(x -0.22, energyEstCPU, width=0.2, fill=False, edgecolor='red', linestyle='dashed', linewidth=2, label='Estimated CPU Energy')
 plt.bar(x, energyEstGPU, width=0.2, fill=False, edgecolor='darkgreen', linestyle='dashed', linewidth=2, label='Estimated GPU Energy')
 plt.bar(x +0.32, energyEstFPGA, width=0.4, fill=False, edgecolor='navy', linestyle='dashed', linewidth=2, label='Estimated FPGA Energy')
 plt.xticks(x, models)
 plt.ylabel('Energy (mJ)')
+errorCPU = 100*np.abs(energyEstCPU - energyCPU)/energyEstCPU
+errorGPU = 100*np.abs(energyEstGPU - energyGPU)/energyEstGPU
+errorFPGA = 100*np.abs(energyEstFPGA - energyFPGA)/energyEstFPGA
+errorFPGA_WCS = 100*np.abs(energyEstFPGA - energyFPGA_WCS)/energyEstFPGA
+
+print(x.size)
+for i in range(len(models)):
+    plt.text(x=float(i)-0.22, y=np.maximum(energyEstCPU[i],energyCPU[i])+0.2, color="red", s=f"{round(errorCPU[i],1)}", ha = 'center', fontdict=dict(fontsize=12))
+    plt.text(x=float(i), y=np.maximum(energyEstGPU[i],energyGPU[i])+0.2, color="darkgreen", s=f"{round(errorGPU[i],1)}", ha = 'center', fontdict=dict(fontsize=12))
+    plt.text(x=float(i)+0.22, y=np.maximum(energyEstFPGA[i],energyFPGA[i])+0.2, color="navy", s=f"{round(errorFPGA[i],1)}", ha = 'center', fontdict=dict(fontsize=12))
+    plt.text(x=float(i)+0.42, y=np.maximum(energyEstFPGA[i],energyFPGA_WCS[i])+0.2, color="navy", s=f"{round(errorFPGA_WCS[i],1)}", ha = 'center', fontdict=dict(fontsize=12))
 
 #plt.grid()
 plt.legend()

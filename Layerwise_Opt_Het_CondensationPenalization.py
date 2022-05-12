@@ -189,14 +189,27 @@ ALM_MAX = cp.Constant(80330) # Max number of Arithmetic Logic Modules
 #ALUT_MAX = cp.Constant(name = "ALUT_MAX") # Max number of Adaptive Look-Up Table - Overlaps with ALMs
 LAB_MAX = cp.Constant(8033) # Max number of Memory Logic Array Block
 M20K_MAX = cp.Constant(587) # Max number of Memory M20K blocks
-# Tensor to be partitionned  (Example GConvv 224x224x3 with 32 filters of size 3x3)
-HW = cp.Constant(112)
-C = cp.Constant(16)
-k = cp.Constant(1)
-N = cp.Constant(32)
-C_C_h = cp.Constant(8)
-C_F_h = cp.Constant(4)
-C_G_h = cp.Constant(4)
+# CNN model: AlexNet model
+#num_layers = 5
+#layer_names =       ["Conv0","Conv1","Conv2","Conv3","Conv4"]
+#HW_layers = np.array([224,54 ,26 ,12 ,12 ])
+#C_layers = np.array ([3  ,96 ,256,384,384])
+#k_layers = np.array ([11 ,5  ,3  ,3  ,3  ])
+#N_layers = np.array ([96 ,256,384,384,256])
+# CNN model: VGG16
+#num_layers = 13
+#layer_names =       ["L0","L1","L2","L3","L4","L5","L6","L7","L8","L9","L10","L11","L12"]
+#HW_layers = np.array ([224 ,224 ,112 ,112 ,56 ,56 ,56 ,28 ,28 ,28 ,14 ,14 ,14])
+#C_layers = np.array ([3, 64 ,64 ,128 ,128 ,256 ,256 ,256 ,512 ,512 ,512 ,512 ,512])
+#k_layers = np.array ([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3])
+#N_layers = np.array ([64 ,64 ,128 ,128 ,256 ,256 ,256 ,512 ,512 ,512 ,512 ,512 ,512])
+# CNN model: ResNet18
+num_layers = 17
+layer_names =       ["L0","L1","L2","L3","L4","L5","L6","L7","L8","L9","L10","L11","L12","L13","L14","L15","L16"]
+HW_layers = np.array ([224, 56 ,56 ,56 ,56 ,56 ,28 ,28 ,28 ,28 ,14 ,14 ,14 ,14 ,7 ,7 ,7])
+C_layers = np.array ([3, 64 ,64 ,64 ,64 ,64 ,128 ,128 ,128 ,128 ,256 ,256 ,256 ,256 ,512 ,512 ,512])
+k_layers = np.array ([7, 3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3 ,3])
+N_layers = np.array ([64, 64 ,64 ,64 ,64 ,128 ,128 ,128 ,128 ,256 ,256 ,256 ,256 ,512 ,512 ,512 ,512])
 # Device parameters/coefficients
 constantsCPU = cp.Constant(parametersLATCPU)
 constantsGPU = cp.Constant(parametersLATGPU)
@@ -213,124 +226,127 @@ print("CPU Latency Parameters : ", constantsCPU)
 print("GPU Latency Parameters : ", constantsGPU)
 print("FPGA Latency Parameters : ", constantsFPGA)
 print("GPU-FPGA Latency Parameters : ", constantsGPUFPGACOMM)
-# Constraints definition                                         
-constraints = [HW_C>=1,C_C>=1,k_C>=1,N_C>=1,
-               HW_G>=1,C_G>=1,k_G>=1,N_G>=1,
-               HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
-               HW_C == HW,
-               HW_G == HW,
-               HW_F == HW,
-               k_C == k,
-               k_G == k,
-               k_F == k,
-               N_C == N,
-               N_G == N,
-               N_F == N,
-               # Resources constraints
-               ALM_FPGA([HW_F, C_F, k_F, N_F], *constantsALM) <= ALM_MAX,
-               LAB_FPGA([HW_F, C_F, k_F, N_F], *constantsLAB) <= LAB_MAX,
-               M20K_FPGA([HW_F, C_F, k_F, N_F], *constantsM20K) <= M20K_MAX,
-               # Relaxed constraints
-               (C_C+C_G+C_F)/C <= 1, # Relaxation from C_C + C_F + C_G == C
-               ]
-# Sweep over different W_k weight values
-w = 0
-steps = 0
-step_size = 10
-C_C_list, C_G_list, C_F_list, eq_const_list, obj_results = [], [], [], [], []
-last_eq_value = 0.0
-while last_eq_value <= 0.99:
-    # Forming penalization term
-    steps = steps + 1
-    w = w + step_size
-    W = cp.Constant(w)
-    exponent0 = C_C_h/(C_C_h+C_F_h+C_G_h)
-    exponent1 = C_F_h/(C_C_h+C_F_h+C_G_h)
-    exponent2 = C_G_h/(C_C_h+C_F_h+C_G_h)
-    condensation0 = cp.power(C_C/C/(C_C_h/(C_C_h+C_F_h+C_G_h)),exponent0.value)
-    condensation1 = cp.power(C_F/C/(C_F_h/(C_C_h+C_F_h+C_G_h)),exponent1.value)
-    condensation2 = cp.power(C_G/C/(C_G_h/(C_C_h+C_F_h+C_G_h)),exponent2.value)
-    penalization = 1 / (condensation0*condensation1*condensation2)
-    # Heterogeneous objective function (Lateny in ms) (Sequential => addition) (Concurrent => max function)
-    objective_fn = 1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU) + \
-                   1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
-                   LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
-                   LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM) + \
-                   W*penalization
-    # objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
-                              # 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
-                              # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
-                   # W*penalization
-    # Minimize convex objective function                
-    objective = cp.Minimize(objective_fn)
-    prob = cp.Problem(objective, constraints)
-    # The optimal objective value is returned by `prob.solve()`.
-    if prob.is_dgp() == True:
-        #print("Using GP")
-        result = prob.solve(gp = True)
-    elif prob.is_dcp() == True:
-        #print("Using CP")
-        result = prob.solve()
-    else:
-        #print("Problem is Non-Convex")
-        try:
-            prob.solve()
-        except cp.DCPError as e:
-            print(e)
-        sys.exit()   
-    # The optimal value for x is stored in `x.value`.  
-    # Store optimal value
-    opt_val = prob.value 
-    #Appending results
-    C_C_list.append(np.rint(C_C.value))
-    C_F_list.append(np.rint(C_F.value))
-    C_G_list.append(np.rint(C_G.value))
-    #last_eq_value = (np.rint(C_C.value)+np.rint(C_F.value)+np.rint(C_G.value))/C.value
-    last_eq_value = (C_C.value+C_F.value+C_G.value)/C.value
-    eq_const_list.append(last_eq_value)
-    obj_results.append(opt_val-W.value*penalization.value)
 
-print("Solution found: ", opt_val)
-print("Solver used: ", prob.solver_stats.solver_name)
-print("CPU feature values")
-print("Value for", HW_C, "feature: ", np.rint(HW_C.value))
-print("Value for", C_C, "feature: ", np.rint(C_C.value))
-print("Value for", k_C, "feature: ", np.rint(k_C.value))
-print("Value for", N_C, "feature: ", np.rint(N_C.value))
-print("GPU feature values")
-print("Value for", HW_G, "feature: ", np.rint(HW_G.value))
-print("Value for", C_G, "feature: ", np.rint(C_G.value))
-print("Value for", k_G, "feature: ", np.rint(k_G.value))
-print("Value for", N_G, "feature: ", np.rint(N_G.value))
-print("FPGA feature values")
-print("Value for", HW_F, "feature: ", np.rint(HW_F.value))
-print("Value for", C_F, "feature: ", np.rint(C_F.value))
-print("Value for", k_F, "feature: ", np.rint(k_F.value))
-print("Value for", N_F, "feature: ", np.rint(N_F.value))
-# The optimal Lagrange multiplier for a constraint is stored in
-# `constraint.dual_value`.
-#print(constraints[0].dual_value)
+C_C_list, C_G_list, C_F_list, eq_const_list, obj_results = [], [], [], [], []
+
+for l in range(num_layers):
+    # Tensor to be partitionned  (Example GConvv 224x224x3 with 32 filters of size 3x3)
+    HW = cp.Constant(HW_layers[l])
+    C = cp.Constant(C_layers[l])
+    k = cp.Constant(k_layers[l])
+    N = cp.Constant(N_layers[l])
+    C_C_h = cp.Constant(C_layers[l]/3)
+    C_F_h = cp.Constant(C_layers[l]/3)
+    C_G_h = cp.Constant(C_layers[l]/3)
+    # Constraints definition                                         
+    constraints = [HW_C>=1,C_C>=1,k_C>=1,N_C>=1,
+                   HW_G>=1,C_G>=1,k_G>=1,N_G>=1,
+                   HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
+                   HW_C == HW,
+                   HW_G == HW,
+                   HW_F == HW,
+                   k_C == k,
+                   k_G == k,
+                   k_F == k,
+                   N_C == N,
+                   N_G == N,
+                   N_F == N,
+                   # Resources constraints
+                   #ALM_FPGA([HW_F, C_F, k_F, N_F], *constantsALM) <= ALM_MAX,
+                   #LAB_FPGA([HW_F, C_F, k_F, N_F], *constantsLAB) <= LAB_MAX,
+                   #M20K_FPGA([HW_F, C_F, k_F, N_F], *constantsM20K) <= M20K_MAX,
+                   # Relaxed constraints
+                   (C_C+C_G+C_F)/C <= 1, # Relaxation from C_C + C_F + C_G == C
+                   ]
+    # Sweep over different W_k weight values
+    w = 0
+    steps = 0
+    step_size = 10
+    last_eq_value = 0.0
+    while last_eq_value <= 0.99:
+        # Forming penalization term
+        steps = steps + 1
+        w = w + step_size
+        W = cp.Constant(w)
+        exponent0 = C_C_h/(C_C_h+C_F_h+C_G_h)
+        exponent1 = C_F_h/(C_C_h+C_F_h+C_G_h)
+        exponent2 = C_G_h/(C_C_h+C_F_h+C_G_h)
+        condensation0 = cp.power(C_C/C/(C_C_h/(C_C_h+C_F_h+C_G_h)),exponent0.value)
+        condensation1 = cp.power(C_F/C/(C_F_h/(C_C_h+C_F_h+C_G_h)),exponent1.value)
+        condensation2 = cp.power(C_G/C/(C_G_h/(C_C_h+C_F_h+C_G_h)),exponent2.value)
+        penalization = 1 / (condensation0*condensation1*condensation2)
+        # Heterogeneous objective function (Lateny in ms) (Sequential => addition) (Concurrent => max function)
+        objective_fn = 1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU) + \
+                       1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU) + \
+                       LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
+                       LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM) + \
+                       W*penalization
+        # objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
+                                  # 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
+                                  # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
+                       # W*penalization
+        # Minimize convex objective function                
+        objective = cp.Minimize(objective_fn)
+        prob = cp.Problem(objective, constraints)
+        # The optimal objective value is returned by `prob.solve()`.
+        if prob.is_dgp() == True:
+            #print("Using GP")
+            result = prob.solve(gp = True)
+        elif prob.is_dcp() == True:
+            #print("Using CP")
+            result = prob.solve()
+        else:
+            #print("Problem is Non-Convex")
+            try:
+                prob.solve()
+            except cp.DCPError as e:
+                print(e)
+            sys.exit()   
+        # The optimal value for x is stored in `x.value`.  
+        # Store optimal value
+        opt_val = prob.value 
+        #last_eq_value = (np.rint(C_C.value)+np.rint(C_F.value)+np.rint(C_G.value))/C.value
+        last_eq_value = (C_C.value+C_F.value+C_G.value)/C.value
+        obj_results.append(opt_val-W.value*penalization.value)
+    
+    #Appending results
+    C_C_list.append(C_C.value/C.value)
+    C_F_list.append(C_F.value/C.value)
+    C_G_list.append(C_G.value/C.value)
+    eq_const_list.append(last_eq_value)
+    print("Solution found: ", opt_val, " for layer: ", layer_names[l])
+    print("Solver used: ", prob.solver_stats.solver_name)
+    print("CPU feature values")
+    print("Value for", HW_C, "feature: ", np.rint(HW_C.value))
+    print("Value for", C_C, "feature: ", np.rint(C_C.value))
+    print("Value for", k_C, "feature: ", np.rint(k_C.value))
+    print("Value for", N_C, "feature: ", np.rint(N_C.value))
+    print("GPU feature values")
+    print("Value for", HW_G, "feature: ", np.rint(HW_G.value))
+    print("Value for", C_G, "feature: ", np.rint(C_G.value))
+    print("Value for", k_G, "feature: ", np.rint(k_G.value))
+    print("Value for", N_G, "feature: ", np.rint(N_G.value))
+    print("FPGA feature values")
+    print("Value for", HW_F, "feature: ", np.rint(HW_F.value))
+    print("Value for", C_F, "feature: ", np.rint(C_F.value))
+    print("Value for", k_F, "feature: ", np.rint(k_F.value))
+    print("Value for", N_F, "feature: ", np.rint(N_F.value))
 
 # Plot results
-width = 1.75*step_size/steps
+width = 0.5
 x = np.linspace(1, steps, len(eq_const_list))
 y = np.asarray(eq_const_list)
 fig, ax = plt.subplots()
-rects0 = ax.bar(x, np.asarray(C_C_list), width, label='CPU ' r'($C_C$)', color = 'tomato', bottom = (np.asarray(C_F_list)+np.asarray(C_G_list)))
-rects1 = ax.bar(x, np.asarray(C_F_list), width, label='FPGA ' r'($C_F$)', color = 'blue')
-rects2 = ax.bar(x, np.asarray(C_G_list), width, label='GPU ' r'($C_G$)', color = 'green', bottom = np.asarray(C_F_list))
-ax.set_ylabel('Number of Channels ' r'($C_C+C_F+C_G$)', color = 'black', fontweight = 'bold')
-ax.set_xlabel('Penalization weight ' r'($\alpha$)', color = 'black', fontweight = 'bold')
+rects0 = ax.bar(layer_names, np.asarray(C_C_list), width, label='CPU ' r'($C_C$)', color = 'tomato', bottom = (np.asarray(C_F_list)+np.asarray(C_G_list)))
+rects1 = ax.bar(layer_names, np.asarray(C_F_list), width, label='FPGA ' r'($C_F$)', color = 'blue')
+rects2 = ax.bar(layer_names, np.asarray(C_G_list), width, label='GPU ' r'($C_G$)', color = 'green', bottom = np.asarray(C_F_list))
+ax.set_ylabel('Normalized number of Channels ' r'$\frac{C_C+C_F+C_G}{C}$', color = 'black', fontweight = 'bold')
+ax.set_xlabel('Layer name', color = 'black', fontweight = 'bold')
 ax.grid()
-ax.legend()
-ax2 = ax.twinx()
-color = 'tab:red'
-ax2.plot(x,y,'-',color='red',linewidth=2.5)
-ax2.set_ylabel('Equality constrain value', color = color, fontweight = 'bold')
-ax2.tick_params(axis='y', labelcolor=color)
-fig, ax3 = plt.subplots()
-ax3.plot(x,np.asarray(obj_results),'-',color='purple',linewidth=2.5)
-ax3.set_ylabel('Latency ' r'($LAT_{Het}$ in ms)', color = 'black', fontweight = 'bold')
-ax3.set_xlabel('Penalization weight ' r'($\alpha$)', color = 'black', fontweight = 'bold')
-ax3.grid()
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=3)
+#fig, ax3 = plt.subplots()
+#ax3.plot(x,np.asarray(obj_results),'-',color='purple',linewidth=2.5)
+#ax3.set_ylabel('Latency ' r'($LAT_{Het}$ in ms)', color = 'black', fontweight = 'bold')
+#ax3.set_xlabel('Penalization weight ' r'($\alpha$)', color = 'black', fontweight = 'bold')
+#ax3.grid()
 plt.show()
