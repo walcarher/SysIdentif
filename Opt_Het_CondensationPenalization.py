@@ -190,9 +190,9 @@ ALM_MAX = cp.Constant(80330) # Max number of Arithmetic Logic Modules
 LAB_MAX = cp.Constant(8033) # Max number of Memory Logic Array Block
 M20K_MAX = cp.Constant(587) # Max number of Memory M20K blocks
 # Tensor to be partitionned  (Example GConvv 224x224x3 with 32 filters of size 3x3)
-HW = cp.Constant(112)
+HW = cp.Constant(64)
 C = cp.Constant(16)
-k = cp.Constant(1)
+k = cp.Constant(3)
 N = cp.Constant(32)
 C_C_h = cp.Constant(8)
 C_F_h = cp.Constant(4)
@@ -257,10 +257,11 @@ while last_eq_value <= 0.99:
                    LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
                    LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM) + \
                    W*penalization
-    # objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
-                              # 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
-                              # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
-                   # W*penalization
+    #objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
+    #                          1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
+    #                          LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA) + \
+    #                          LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM)) + \
+    #               W*penalization
     # Minimize convex objective function                
     objective = cp.Minimize(objective_fn)
     prob = cp.Problem(objective, constraints)

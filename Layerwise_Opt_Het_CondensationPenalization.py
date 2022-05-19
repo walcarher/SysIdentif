@@ -228,6 +228,8 @@ print("FPGA Latency Parameters : ", constantsFPGA)
 print("GPU-FPGA Latency Parameters : ", constantsGPUFPGACOMM)
 
 C_C_list, C_G_list, C_F_list, eq_const_list, obj_results = [], [], [], [], []
+CPU_lat, GPU_lat, FPGA_lat, COMM_lat = [], [], [], []
+singleDev_results = []
 
 for l in range(num_layers):
     # Tensor to be partitionned  (Example GConvv 224x224x3 with 32 filters of size 3x3)
@@ -239,9 +241,9 @@ for l in range(num_layers):
     C_F_h = cp.Constant(C_layers[l]/3)
     C_G_h = cp.Constant(C_layers[l]/3)
     # Constraints definition                                         
-    constraints = [HW_C>=1,C_C>=1,k_C>=1,N_C>=1,
-                   HW_G>=1,C_G>=1,k_G>=1,N_G>=1,
-                   HW_F>=1,C_F>=1,k_F>=1,N_F>=1,
+    constraints = [HW_C>=1,C_C>=0.1,k_C>=1,N_C>=1,
+                   HW_G>=1,C_G>=0.1,k_G>=1,N_G>=1,
+                   HW_F>=1,C_F>=0.1,k_F>=1,N_F>=1,
                    HW_C == HW,
                    HW_G == HW,
                    HW_F == HW,
@@ -283,7 +285,8 @@ for l in range(num_layers):
                        W*penalization
         # objective_fn = cp.maximum(1000*LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU),
                                   # 1000*LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU),
-                                  # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)) + \
+                                  # LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA)+ \
+                                  # LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM)) + \
                        # W*penalization
         # Minimize convex objective function                
         objective = cp.Minimize(objective_fn)
@@ -307,14 +310,20 @@ for l in range(num_layers):
         opt_val = prob.value 
         #last_eq_value = (np.rint(C_C.value)+np.rint(C_F.value)+np.rint(C_G.value))/C.value
         last_eq_value = (C_C.value+C_F.value+C_G.value)/C.value
-        obj_results.append(opt_val-W.value*penalization.value)
     
-    #Appending results
+    # Appending results
     C_C_list.append(C_C.value/C.value)
     C_F_list.append(C_F.value/C.value)
     C_G_list.append(C_G.value/C.value)
     eq_const_list.append(last_eq_value)
-    print("Solution found: ", opt_val, " for layer: ", layer_names[l])
+    obj_results.append((opt_val-W.value*penalization.value)/1000)
+    singleDev_results.append(LatencyCPU([HW_layers[l], C_layers[l], k_layers[l], N_layers[l]], *constantsCPU).value)
+    CPU_lat.append(LatencyCPU([HW_C, C_C, k_C, N_C], *constantsCPU).value)
+    GPU_lat.append(LatencyGPU([HW_G, C_G, k_G, N_G], *constantsGPU).value)
+    FPGA_lat.append(LatencyFPGA([HW_F, C_F, k_F, N_F], *constantsFPGA).value/1000)
+    COMM_lat.append(LatencyGPUFPGA_COMM([HW_F*HW_F*C_F*8/1024], *constantsGPUFPGACOMM))
+    # Printing Results
+    print("Solution found: ", opt_val-W.value*penalization.value, " for layer: ", layer_names[l])
     print("Solver used: ", prob.solver_stats.solver_name)
     print("CPU feature values")
     print("Value for", HW_C, "feature: ", np.rint(HW_C.value))
@@ -334,19 +343,28 @@ for l in range(num_layers):
 
 # Plot results
 width = 0.5
-x = np.linspace(1, steps, len(eq_const_list))
-y = np.asarray(eq_const_list)
 fig, ax = plt.subplots()
-rects0 = ax.bar(layer_names, np.asarray(C_C_list), width, label='CPU ' r'($C_C$)', color = 'tomato', bottom = (np.asarray(C_F_list)+np.asarray(C_G_list)))
-rects1 = ax.bar(layer_names, np.asarray(C_F_list), width, label='FPGA ' r'($C_F$)', color = 'blue')
-rects2 = ax.bar(layer_names, np.asarray(C_G_list), width, label='GPU ' r'($C_G$)', color = 'green', bottom = np.asarray(C_F_list))
+rects0 = ax.bar(layer_names[0:num_layers], np.asarray(C_C_list), width, label='CPU ' r'($C_C$)', color = 'tomato', bottom = (np.asarray(C_F_list)+np.asarray(C_G_list)))
+rects1 = ax.bar(layer_names[0:num_layers], np.asarray(C_F_list), width, label='FPGA ' r'($C_F$)', color = 'blue')
+rects2 = ax.bar(layer_names[0:num_layers], np.asarray(C_G_list), width, label='GPU ' r'($C_G$)', color = 'green', bottom = np.asarray(C_F_list))
 ax.set_ylabel('Normalized number of Channels ' r'$\frac{C_C+C_F+C_G}{C}$', color = 'black', fontweight = 'bold')
 ax.set_xlabel('Layer name', color = 'black', fontweight = 'bold')
 ax.grid()
 ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=3)
-#fig, ax3 = plt.subplots()
-#ax3.plot(x,np.asarray(obj_results),'-',color='purple',linewidth=2.5)
-#ax3.set_ylabel('Latency ' r'($LAT_{Het}$ in ms)', color = 'black', fontweight = 'bold')
-#ax3.set_xlabel('Penalization weight ' r'($\alpha$)', color = 'black', fontweight = 'bold')
-#ax3.grid()
+x = np.arange(num_layers)
+fig2, ax2 = plt.subplots()
+ax2.plot(x,np.asarray(CPU_lat),'-o',markersize=10, color='tomato',linewidth=2,label='CPU')
+ax2.plot(x,np.asarray(GPU_lat),'-s',markersize=10, color='green',linewidth=2,label='GPU')
+ax2.plot(x,np.asarray(FPGA_lat),'-^',markersize=10, color='blue',linewidth=3,label='FPGA')
+ax2.plot(x,np.asarray(singleDev_results),'--',markersize=10, color='gray',linewidth=2,label='Single device')
+ax2.plot(x,np.asarray(obj_results),'-D',markersize=10, color='purple',linewidth=2,label='Heterogeneous')
+ax2.set_ylabel('Latency ' r'($LAT_{Het}$ in $ms$)', color = 'black', fontweight = 'bold')
+ax2.set_xlabel('Layer name', color = 'black', fontweight = 'bold')
+plt.xticks(np.arange(num_layers), layer_names[0:num_layers])
+ax2.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),ncol=5)
+ax3 = ax2.twinx()
+ax3.set_ylabel('Speed-up factor', color='red', fontweight = 'bold')
+ax3.plot(x, np.asarray(singleDev_results)/np.asarray(obj_results),'-*',markersize=12, linewidth=2, color='red')
+ax3.tick_params(axis='y', labelcolor='red')
+fig.tight_layout() 
 plt.show()
